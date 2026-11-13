@@ -6,10 +6,12 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.2.0';
+var VERSAO = '2.3.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
+// Parcelados desligados (pedido em 13/11/2026). Para religar, troque para true.
+var COM_PARCELADOS = false;
 var PALETA = ['#e53935', '#fb8c00', '#43a047', '#0284c7', '#00897b', '#d81b60', '#6d4c41', '#3949ab', '#f4511e', '#8e24aa', '#546e7a', '#c0a000'];
 var EMOJIS = ['🚗', '⛽', '🛒', '🛍️', '🏠', '💡', '✈️', '🍽️', '☕', '🩺', '💊', '🐾', '👕', '📚', '🎓', '🎉', '🎮', '💳', '🏦', '📱', '🔧', '👶', '🏋️', '💇', '🎁', '🍺', '🧾', '📦', '⚽', '🏖️'];
 var MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -161,7 +163,7 @@ function normalizarCfg(c) {
 }
 function catsComuns() { return (S.cfg && S.cfg.cats) || []; }
 function catParc() { return { id: PARC, emoji: '📦', nome: 'Parcelados', cor: '#7c3aed', orc: (S.cfg && +S.cfg.orcParc) || 0, subs: [] }; }
-function todasCats() { return catsComuns().concat([catParc()]); }
+function todasCats() { return COM_PARCELADOS ? catsComuns().concat([catParc()]) : catsComuns(); }
 function catPorId(id) {
   if (id === PARC) return catParc();
   var cs = catsComuns();
@@ -256,7 +258,7 @@ function totaisPeriodo(p) {
     porDia[l.data] = (porDia[l.data] || 0) + l.valor;
     porDiaCat[k][l.data] = (porDiaCat[k][l.data] || 0) + l.valor;
   });
-  tots[PARC] = calcularMensalParcelados(todos);
+  tots[PARC] = COM_PARCELADOS ? calcularMensalParcelados(todos) : 0;
   return { todos: todos, lista: lista, tots: tots, qtds: qtds, comum: comum, nComuns: nComuns, porDia: porDia, porDiaCat: porDiaCat };
 }
 function orcComum() { return catsComuns().reduce(function (s, c) { return s + (+c.orc || 0); }, 0); }
@@ -607,7 +609,7 @@ function salvarLancamento() {
     if (!r.p) { r.c = a.cat; r.s = a.sub || null; }
     ps.push(gravarLanc(a.editId, r));
     mostrarToast('✅', 'Lançamento atualizado');
-  } else if (a.nParc > 1) {
+  } else if (COM_PARCELADOS && a.nParc > 1) {
     var gid = Date.now().toString(36) + rid(4), parcV = Math.round(valor / a.nParc * 100);
     for (var i = a.parcIni - 1, off = 0; i < a.nParc; i++, off++) {
       ps.push(gravarLanc(gid + '-' + (i + 1), {
@@ -835,7 +837,7 @@ function renderizarRelatorio() {
 
 // ═════════════════════════ POR CATEGORIA ═════════════════════════
 function renderizarRelcat() {
-  var abas = todasCats().concat([{ id: '_planos', emoji: '📊', nome: 'Planos', cor: '#7c3aed' }]);
+  var abas = COM_PARCELADOS ? todasCats().concat([{ id: '_planos', emoji: '📊', nome: 'Planos', cor: '#7c3aed' }]) : todasCats();
   if (!S.rcCat || !abas.some(function (a) { return a.id === S.rcCat; })) S.rcCat = abas[0].id;
   $('relcat-tabs').innerHTML = abas.map(function (a) {
     var on = a.id === S.rcCat;
@@ -925,8 +927,8 @@ function cancelarPlano(gid) {
 // ═════════════════════════ PROJEÇÃO ═════════════════════════
 function atualizarProjecao() {
   var p = getPer('proj');
-  renderizarTermometroDivida();
-  renderizarProjecaoParcelados();
+  if (COM_PARCELADOS) { renderizarTermometroDivida(); renderizarProjecaoParcelados(); }
+  else { $('proj-termometro').innerHTML = ''; $('proj-parcelados').innerHTML = ''; }
   var lim = baseDisponivel();
   $('proj-sem-limite').style.display = lim > 0 ? 'none' : '';
   $('proj-conteudo').style.display = lim > 0 && p ? '' : 'none';
@@ -1618,6 +1620,10 @@ function ligarEventos() {
   $('sel-sub').onchange = function () { S.add.sub = this.value || null; };
   $('btn-hoje').onclick = function () { $('inp-data').value = hoje(); };
   $('inp-valor').oninput = atualizarPreviewParcela;
+  if (!COM_PARCELADOS) {
+    $('card-parc').style.display = 'none';
+    var n5 = $('card-parc').nextElementSibling && $('card-parc').nextElementSibling.querySelector('.add-step-n'); if (n5) n5.textContent = '4';
+  }
   $('btn-parcela-toggle').onclick = function () { S.add.nParc = S.add.nParc > 1 ? 1 : 2; S.add.parcIni = 1; atualizarParcUI(); };
   $('sel-parcelas').onchange = function () { S.add.nParc = +this.value; if (S.add.parcIni > S.add.nParc) S.add.parcIni = 1; atualizarParcUI(); };
   $('sel-parcela-ini').onchange = function () { S.add.parcIni = +this.value; atualizarPreviewParcela(); };
