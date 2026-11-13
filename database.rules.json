@@ -1,0 +1,53 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "usuarios": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "casa": { ".validate": "newData.isString() && newData.val().length <= 64" },
+        "$outro": { ".validate": false }
+      }
+    },
+
+    "casas": {
+      "$casa": {
+        ".read": "auth != null && data.child('membros').child(auth.uid).exists()",
+        ".write": "auth != null && !data.exists() && newData.child('dono').val() === auth.uid && newData.child('membros').child(auth.uid).val() === newData.child('convite').val()",
+
+        "dono":   { ".validate": "newData.isString()" },
+        "salt":   { ".validate": "newData.isString() && newData.val().length <= 64" },
+        "verif":  { ".validate": "newData.hasChildren(['iv', 'd'])" },
+        "criada": { ".validate": "newData.isNumber()" },
+
+        "convite": {
+          ".write": "auth != null && data.parent().child('dono').val() === auth.uid",
+          ".validate": "newData.isString() && newData.val().length >= 20 && newData.val().length <= 64"
+        },
+
+        "membros": {
+          "$uid": {
+            ".write": "auth != null && ((auth.uid === $uid && (!newData.exists() || newData.val() === data.parent().parent().child('convite').val())) || data.parent().parent().child('dono').val() === auth.uid)",
+            ".validate": "newData.isString() && newData.val().length <= 64"
+          }
+        },
+
+        "dados": {
+          ".write": "auth != null && data.parent().child('membros').child(auth.uid).exists()",
+          "config": { ".validate": "newData.hasChildren(['iv', 'd']) && newData.child('d').val().length < 200000" },
+          "lanc": {
+            "$id": { ".validate": "newData.hasChildren(['iv', 'd']) && newData.child('d').val().length < 20000" }
+          },
+          "perfis": {
+            "$uid": { ".validate": "newData.hasChildren(['iv', 'd']) && newData.child('d').val().length < 2000" }
+          },
+          "$outro": { ".validate": false }
+        },
+
+        "$outro": { ".validate": false }
+      }
+    }
+  }
+}
