@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.3.0';
+var VERSAO = '2.4.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -268,10 +268,26 @@ function baseDisponivel() { var lim = +S.cfg.limite || 0; return lim > 0 ? lim :
 // ═════════════════════════ telas ═════════════════════════
 function mostrarEntrada(card) {
   ['card-semconfig', 'card-auth', 'card-casa', 'card-unlock'].forEach(function (id) { $(id).style.display = id === card ? '' : 'none'; });
+  prepararConvite(card);
   $('tela-login').classList.add('ativa');
   $('nav').style.display = 'none';
   qsa('.tela').forEach(function (t) { t.classList.remove('ativa'); });
   $('app-loading').style.display = 'none';
+}
+function prepararConvite(card) {
+  var c = convitePendente(); if (!c) return;
+  if (card === 'card-auth' && !S.avisouConvite) {
+    S.avisouConvite = true; setModoCriar(true);
+    $('au-erro').innerHTML = '<span style="color:#1d4ed8">📩 Você recebeu um convite! Crie sua conta abaixo. Se já tem conta, toque em <b>Entrar</b>.</span>';
+  }
+  if (card === 'card-casa') {
+    setAbaCasa(true);
+    $('cv-codigo').value = c;
+    var campo = $('cv-codigo').parentNode; if (campo) campo.style.display = 'none';
+    var nota = $('cv-nota');
+    if (!nota) { nota = document.createElement('div'); nota.id = 'cv-nota'; $('box-convite').insertBefore(nota, $('box-convite').firstChild); }
+    nota.innerHTML = '<div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:12px">✅ <b>Convite recebido.</b> Agora é só digitar a <b>senha da casa</b> que te passaram.</div>';
+  }
 }
 function carregando(txt) { $('ld-txt').textContent = txt || 'Carregando…'; $('app-loading').style.display = ''; }
 
@@ -1185,6 +1201,17 @@ function renderizarSemana() {
 
 // ═════════════════════════ AJUSTES ═════════════════════════
 function codigoConvite() { return S.meta && S.meta.convite ? 'HV-' + S.casa + '-' + S.meta.convite : ''; }
+// Link de convite: o código vai dentro do link, e a pessoa só precisa tocar nele (14/11/2026)
+function linkConvite() { var c = codigoConvite(); return c ? location.origin + location.pathname + '#convite=' + c : ''; }
+var CHAVE_CONV = 'hv_convite_pendente';
+function convitePendente() { try { return localStorage.getItem(CHAVE_CONV) || ''; } catch (e) { return ''; } }
+function capturarConviteDoLink() {
+  var m = /[#&]convite=([^&]+)/i.exec(location.hash || '');
+  if (!m) return;
+  var c = decodeURIComponent(m[1]);
+  if (lerConvite(c)) { try { localStorage.setItem(CHAVE_CONV, c); } catch (e) {} }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+}
 function souDono() { return S.meta && S.user && S.meta.dono === S.user.uid; }
 function renderAjustes() {
   if (document.activeElement !== $('aj-nome')) { $('aj-nome').value = S.cfg.nome || ''; $('aj-moeda').value = moeda(); }
@@ -1195,7 +1222,9 @@ function renderAjustes() {
       (c.id === PARC ? '<button class="aj-btn" data-editcat="' + PARC + '">Orçamento</button>' :
         '<button class="aj-btn" data-subircat="' + c.id + '" aria-label="Subir">↑</button><button class="aj-btn" data-editcat="' + c.id + '">Editar</button>') + '</div>';
   }).join('');
-  $('aj-codigo').textContent = codigoConvite();
+  $('aj-codigo').textContent = linkConvite();
+  $('aj-copiar').textContent = 'Copiar link';
+  var dsc = $('aj-codigo').previousElementSibling; if (dsc) dsc.innerHTML = 'Toque em <b>Compartilhar</b> e mande o link pelo WhatsApp. A pessoa toca no link, cria a conta e digita a <b>senha da casa</b>, que você passa <b>à parte</b> (pessoalmente ou por ligação).';
   $('aj-novocod').style.display = souDono() ? '' : 'none';
   $('aj-membros').innerHTML = Object.keys(S.membros).map(function (uid) {
     var p = S.perfis[uid] || {}, eu = uid === S.user.uid, dono = S.meta && S.meta.dono === uid;
@@ -1283,11 +1312,11 @@ function excluirCat() {
 
 // Convite / membros
 function copiar(txt) {
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { mostrarToast('📋', 'Código copiado'); }, function () { mostrarToast('ℹ️', 'Toque e segure o código para copiar'); });
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { mostrarToast('📋', 'Copiado'); }, function () { mostrarToast('ℹ️', 'Toque e segure o código para copiar'); });
   else mostrarToast('ℹ️', 'Toque e segure o código para copiar');
 }
 function compartilharConvite() {
-  var txt = 'Convite para a casa no HomeVault:\n' + codigoConvite() + '\n\nAbra ' + location.href.split('#')[0].split('?')[0] + ', crie sua conta e toque em "Tenho convite". Vou te passar a senha da casa separadamente.';
+  var txt = '🏠 Te convidei para a nossa casa no HomeVault!\n\n1. Toque no link: ' + linkConvite() + '\n2. Crie sua conta (e-mail e senha)\n3. Digite a senha da casa, que vou te passar à parte';
   if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else copiar(txt);
 }
 function novoCodigo() {
@@ -1357,6 +1386,7 @@ function gravarLanc(id, reg) {
 // ═════════════════════════ entrada: conta, casa, chave ═════════════════════════
 function iniciar() {
   var cfg = window.HOMEVAULT_FIREBASE;
+  capturarConviteDoLink();
   ligarEventos();
   if (!cfg || !cfg.apiKey || /COLE_AQUI/.test(cfg.apiKey) || typeof firebase === 'undefined') { mostrarEntrada('card-semconfig'); return; }
   firebase.initializeApp(cfg);
@@ -1515,7 +1545,7 @@ function lerConvite(txt) {
 function entrarConvite() {
   var cv = lerConvite($('cv-codigo').value), senha = $('cv-senha').value, er = $('cv-erro');
   er.textContent = '';
-  if (!cv) { er.textContent = 'Código de convite inválido. Confira se copiou inteiro (começa com HV-).'; return; }
+  if (!cv) { er.textContent = 'Convite inválido. Toque de novo no link que você recebeu, ou cole o código inteiro (começa com HV-).'; var cp = $('cv-codigo').parentNode; if (cp) cp.style.display = ''; try { localStorage.removeItem(CHAVE_CONV); } catch (e) {} return; }
   if (!senha) { er.textContent = 'Digite a senha da casa.'; return; }
   var btn = $('cv-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
   var memRef = db.ref('casas/' + cv.casa + '/membros/' + S.user.uid);
@@ -1523,7 +1553,7 @@ function entrarConvite() {
     .then(function (snap) {
       var m = snap.val();
       return derivarChave(senha, m.salt).then(function (k) {
-        return decifrar(k, m.verif).then(function () { S.meta = m; return entrouNaCasa(cv.casa, k, false); },
+        return decifrar(k, m.verif).then(function () { S.meta = m; try { localStorage.removeItem(CHAVE_CONV); } catch (e) {} return entrouNaCasa(cv.casa, k, false); },
           function () { return memRef.remove().then(function () { throw { msg: 'Senha da casa incorreta.' }; }); });
       });
     }).catch(function (e) { er.textContent = (e && e.msg) || 'Não foi possível entrar (' + ((e && e.code) || e) + ').'; })
@@ -1642,7 +1672,7 @@ function ligarEventos() {
   // Ajustes
   $('aj-salvar').onclick = salvarCasaAj;
   $('aj-novacat').onclick = function () { abrirCat(null); };
-  $('aj-copiar').onclick = function () { copiar(codigoConvite()); };
+  $('aj-copiar').onclick = function () { copiar(linkConvite()); };
   $('aj-compart').onclick = compartilharConvite;
   $('aj-novocod').onclick = novoCodigo;
   $('aj-exp-json').onclick = exportarJSON;
