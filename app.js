@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.16.1';
+var VERSAO = '2.17.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -2221,6 +2221,9 @@ function nomeUsuario() { return (S.user && (S.user.displayName || (S.user.email 
 function criarCasa() {
   var nome = $('nc-nome').value.trim(), md = $('nc-moeda').value, s1 = $('nc-senha').value, s2 = $('nc-senha2').value, er = $('nc-erro');
   er.textContent = '';
+  // Fase de testes (14/11/2026): só cria casa quem tem o código de acesso. A conferência é feita nas regras do Firebase (admin/codigoAcesso).
+  var acesso = $('nc-acesso').value.trim().toUpperCase().replace(/\s+/g, '');
+  if (!acesso) { er.textContent = 'Digite o código de acesso. O Minha Casa está em fase de testes.'; return; }
   if (!nome) { er.textContent = 'Dê um nome para a casa.'; return; }
   if (s1.length < 8) { er.textContent = 'A senha da casa precisa ter pelo menos 8 caracteres.'; return; }
   if (s1 !== s2) { er.textContent = 'As senhas da casa não conferem.'; return; }
@@ -2229,12 +2232,13 @@ function criarCasa() {
   var casa = rid(20), convite = rid(24), salt = b64(crypto.getRandomValues(new Uint8Array(16))), chave;
   derivarChave(s1, salt).then(function (k) { chave = k; return cifrar(k, VERIF_TEXTO); }).then(function (verif) {
     var m = {}; m[S.user.uid] = convite;
-    return db.ref('casas/' + casa).set({ dono: S.user.uid, convite: convite, salt: salt, verif: verif, membros: m, criada: firebase.database.ServerValue.TIMESTAMP });
+    return db.ref('casas/' + casa).set({ dono: S.user.uid, convite: convite, salt: salt, verif: verif, membros: m, acesso: acesso, criada: firebase.database.ServerValue.TIMESTAMP })
+      .catch(function (e) { if (e && /permission/i.test(e.code || e.message || '')) throw { codigoAcesso: true }; throw e; });
   }).then(function () {
     return cifrar(chave, { v: 2, nome: nome, moeda: md, cats: catsPadrao(), limite: 0, alertaPct: 80, periodo: periodoMesAtual(), orcParc: 0 });
   }).then(function (c) { return db.ref('casas/' + casa + '/dados/config').set(c); })
     .then(function () { return entrouNaCasa(casa, chave, true); })
-    .catch(function (e) { er.textContent = 'Não foi possível criar a casa (' + ((e && e.code) || e) + ').'; })
+    .catch(function (e) { er.textContent = e && e.codigoAcesso ? 'Código de acesso inválido. Confira o código que você recebeu.' : 'Não foi possível criar a casa (' + ((e && e.code) || e) + ').'; })
     .then(function () { btn.disabled = false; btn.textContent = 'Criar casa'; });
 }
 function lerConvite(txt) {

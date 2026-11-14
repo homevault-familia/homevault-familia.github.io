@@ -15,12 +15,13 @@
     "casas": {
       "$casa": {
         ".read": "auth != null && data.child('membros').child(auth.uid).exists()",
-        ".write": "auth != null && !data.exists() && newData.child('dono').val() === auth.uid && newData.child('membros').child(auth.uid).val() === newData.child('convite').val()",
+        ".write": "auth != null && !data.exists() && newData.child('dono').val() === auth.uid && newData.child('membros').child(auth.uid).val() === newData.child('convite').val() && root.child('admin').child('codigoAcesso').exists() && newData.child('acesso').val() === root.child('admin').child('codigoAcesso').val()",
 
         "dono":   { ".validate": "newData.isString()" },
         "salt":   { ".read": "auth != null", ".write": "auth != null && data.parent().child('dono').val() === auth.uid", ".validate": "newData.isString() && newData.val().length <= 64" },
         "verif":  { ".write": "auth != null && data.parent().child('dono').val() === auth.uid", ".validate": "newData.hasChildren(['iv', 'd']) && newData.child('iv').isString() && newData.child('iv').val().length <= 24 && newData.child('d').isString() && newData.child('d').val().length <= 200" },
         "criada": { ".validate": "newData.isNumber()" },
+        "acesso": { ".validate": "newData.isString() && newData.val().length <= 64" },
 
         "prova": {
           ".write": "auth != null && data.parent().child('dono').val() === auth.uid",

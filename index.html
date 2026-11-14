@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="app-version" content="2.16.1">
+<meta name="app-version" content="2.17.0">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -944,6 +944,8 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
     <div class="login-sub">A "casa" guarda os lançamentos. Quem mora junto usa a mesma casa e a mesma senha da casa.</div>
     <div class="hv-tabs"><button id="tab-nova" class="on">Criar casa</button><button id="tab-convite">Tenho convite</button></div>
     <div id="box-nova">
+      <div class="login-aviso" style="background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a">🔒 O Minha Casa está em <b>fase de testes</b>. Para criar uma casa, use o código de acesso que você recebeu. Se foi convidado para uma casa, toque em <b>Tenho convite</b>.</div>
+      <div class="login-campo"><label for="nc-acesso">Código de acesso</label><input id="nc-acesso" autocapitalize="characters" autocomplete="off" placeholder="CASA-…"></div>
       <div class="login-campo"><label for="nc-nome">Nome da casa</label><input id="nc-nome" placeholder="Ex.: Casa da Ana e do João"></div>
       <div class="login-campo"><label for="nc-moeda">Moeda</label>
         <select id="nc-moeda"><option value="CAD">Dólar canadense (CA$)</option><option value="BRL">Real (R$)</option><option value="USD">Dólar americano (US$)</option><option value="EUR">Euro (€)</option></select></div>
