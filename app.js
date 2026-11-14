@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.16.0';
+var VERSAO = '2.16.1';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -939,18 +939,7 @@ function renderizarRelatorio() {
       '<div class="rel-top-val" style="color:' + COR(l.cat) + '">' + formatar(l.valor) + '</div></div>';
   }).join('') + '</div>' : '';
 
-  // Dias até o limite por categoria
-  var linhasDias = catsComuns().filter(function (c) { return +c.orc > 0; }).map(function (c) {
-    var o = +c.orc, g = T.tots[c.id] || 0, dispC = o - g, diasC = Object.keys(T.porDiaCat[c.id] || {}).length, media = diasC ? g / diasC : 0;
-    var exc = dispC <= 0, semRitmo = media === 0, n = (!exc && media > 0) ? Math.floor(dispC / media) : 0;
-    var corD = exc ? '#ef4444' : n <= 7 ? '#f97316' : n <= 15 ? '#eab308' : '#22c55e';
-    var sub = exc ? 'Limite excedido em ' + formatar(Math.abs(dispC)) : semRitmo ? 'Sem gastos no período' : formatar(media) + '/dia · sobra ' + formatar(dispC);
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6"><div style="font-size:22px;width:32px;text-align:center;flex-shrink:0">' + esc(c.emoji) + '</div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#111827">' + esc(c.nome) + '</div><div style="font-size:10px;color:#6b7280;margin-top:1px">' + sub + '</div></div>' +
-      '<div style="text-align:right;flex-shrink:0"><div style="font-size:26px;font-weight:900;color:' + corD + ';line-height:1;letter-spacing:-1px">' + (exc ? '—' : semRitmo ? '∞' : n) + '</div>' +
-      '<div style="font-size:9px;font-weight:700;color:' + corD + ';text-transform:uppercase;letter-spacing:.4px">' + (exc || semRitmo ? '' : 'dias') + '</div></div></div>';
-  }).join('');
-  var diasLim = linhasDias ? '<div class="card" style="margin-bottom:8px;background:#fffde7;border:1px solid #fdd835"><div class="card-titulo">⏱️ Dias até o Limite — por Categoria</div>' + linhasDias + '</div>' : '';
+  // "Dias até o limite por categoria" removido a pedido (14/11/2026).
 
   // Mapa de calor
   var maxDia = 0; dias.forEach(function (d) { if (T.porDia[d] > maxDia) maxDia = T.porDia[d]; });
@@ -977,7 +966,7 @@ function renderizarRelatorio() {
   }).join('') + (orcDia > 0 ? '<div style="font-size:11px;color:#6b7280;margin-top:6px;text-align:right">Limite: ' + formatar(lim) + ' ÷ ' + heatDays.length + ' dias</div>' : '') + '</div>';
 
   el.innerHTML = '<div style="font-size:12px;color:#6b7280;font-weight:600;margin-bottom:10px;text-align:center">📅 ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '</div>' +
-    met + cats + top + diasLim + heat + sem +
+    met + cats + top + heat + sem +
     '<div class="card"><button class="btn-whatsapp" id="rel-wa">📱 Enviar por WhatsApp</button></div>';
   if ($('rel-sem-orc')) $('rel-sem-orc').onclick = abrirOrcamentoInicial;
   $('rel-wa').onclick = function () {
