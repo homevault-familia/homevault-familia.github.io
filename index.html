@@ -825,6 +825,21 @@ body {
 .sem-acoes li { margin:9px 0; }
 .sem-st { border-left:5px solid; }
 .sync-off #sync-dot { background:#f59e0b !important; }
+
+/* ── Rodada 1 (14/11/2026): sem rolagem lateral e botão Salvar sempre visível ── */
+html, body { overflow-x: clip; }
+.grid-cat, .acao-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card-cat { min-width: 0; }
+.card-cat .cat-header { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 8px; row-gap: 1px; align-items: center; }
+.card-cat .cat-icon { grid-row: span 2; }
+.card-cat .cat-nome { min-width: 0; letter-spacing: .2px; font-size: clamp(9.5px, 2.8vw, 11px); overflow-wrap: anywhere; line-height: 1.2; align-self: end; }
+.card-cat .cat-qtd { background: none; padding: 0; border-radius: 0; font-size: 10.5px; font-weight: 600; justify-self: start; align-self: start; white-space: nowrap; }
+.card-cat .cat-linha-vals { flex-direction: column; align-items: flex-start; gap: 6px; }
+.card-cat .cat-linha-vals > div { text-align: left !important; }
+.card-cat .cat-valor { font-size: clamp(14px, 4.1vw, 16px); }
+body.na-tela-add .nav { display: none; }
+body.na-tela-add { padding-bottom: env(safe-area-inset-bottom); }
+body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 </style>
 </head>
 <body>

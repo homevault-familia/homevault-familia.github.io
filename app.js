@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.9.2';
+var VERSAO = '2.10.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -95,6 +95,14 @@ function cifrar(chave, obj) {
   var iv = crypto.getRandomValues(new Uint8Array(12));
   return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, chave, enc.encode(JSON.stringify(obj)))
     .then(function (ct) { return { iv: b64(iv), d: b64(ct) }; });
+}
+// Prova da senha da casa (14/11/2026): valor que só quem tem a chave consegue calcular.
+// As regras do Firebase exigem convite + ':' + prova para entrar, então o link sozinho não basta.
+// AES-GCM com IV fixo só neste texto constante: o resultado é sempre o mesmo e não revela a chave.
+function provaDaChave(chave) {
+  return crypto.subtle.encrypt({ name: 'AES-GCM', iv: new Uint8Array(12) }, chave, enc.encode('minhacasa:prova:v1'))
+    .then(function (ct) { return crypto.subtle.digest('SHA-256', ct); })
+    .then(function (h) { return Array.prototype.map.call(new Uint8Array(h), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); });
 }
 function decifrar(chave, pac) {
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(pac.iv) }, chave, unb64(pac.d))
@@ -299,6 +307,7 @@ function irPara(tela) {
   qsa('.tela').forEach(function (t) { t.classList.remove('ativa'); });
   $('tela-' + tela).classList.add('ativa');
   S.tela = tela;
+  document.body.classList.toggle('na-tela-add', tela === 'add');
   var navMap = { categoria: 'relcat', semana: 'relatorio' };
   if (tela === 'semana') { S.semOff = 0; S.semCic = 0; S.semAberta = false; }
   qsa('.nav button').forEach(function (b) { b.classList.remove('active'); });
@@ -1906,6 +1915,14 @@ function carregarCasa() {
 }
 function abrirCasa(chave) {
   S.chave = chave; S.cfg = null;
+  // o dono grava a prova uma vez (casas criadas antes da 2.10 não têm)
+  if (souDono() && S.meta && !S.meta.prova) {
+    var casaP = S.casa;
+    provaDaChave(chave).then(function (pv) {
+      return db.ref('casas/' + casaP + '/prova').set(pv).then(function () { return db.ref('casas/' + casaP + '/convVer').set(2); })
+        .then(function () { if (S.meta) { S.meta.prova = pv; S.meta.convVer = 2; } });
+    }).catch(function (e) { console.warn('prova:', e && (e.code || e.message)); });
+  }
   carregando('Abrindo a casa…');
   escutar();
 }
@@ -2017,14 +2034,23 @@ function entrarConvite() {
   if (!cv) { er.textContent = 'Convite inválido. Toque de novo no link que você recebeu, ou cole o código inteiro (começa com HV-).'; var cp = $('cv-codigo').parentNode; if (cp) cp.style.display = ''; try { localStorage.removeItem(CHAVE_CONV); } catch (e) {} return; }
   if (!senha) { er.textContent = 'Digite a senha da casa.'; return; }
   var btn = $('cv-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
-  var memRef = db.ref('casas/' + cv.casa + '/membros/' + S.user.uid);
-  memRef.set(cv.convite).then(function () { return db.ref('casas/' + cv.casa).once('value'); }, function () { throw { msg: 'Convite inválido ou expirado. Peça um código novo.' }; })
+  var memRef = db.ref('casas/' + cv.casa + '/membros/' + S.user.uid), chave;
+  // 1) lê o salt (público) e a versão do convite; 2) calcula a chave e a prova com a senha digitada;
+  // 3) só entra se as regras aceitarem convite + prova (senha certa e convite válido)
+  Promise.all([db.ref('casas/' + cv.casa + '/salt').once('value'), db.ref('casas/' + cv.casa + '/convVer').once('value')])
+    .catch(function () { throw { msg: 'Convite inválido ou expirado. Peça um link novo.' }; })
+    .then(function (r) {
+      if (!r[0].exists()) throw { msg: 'Convite inválido ou expirado. Peça um link novo.' };
+      if (r[1].val() !== 2) throw { msg: 'Este convite ainda não está ativo. Peça para quem criou a casa abrir o MinhaCasa uma vez e mandar o link de novo.' };
+      return derivarChave(senha, r[0].val());
+    })
+    .then(function (k) { chave = k; return provaDaChave(k); })
+    .then(function (pv) { return memRef.set(cv.convite + ':' + pv).catch(function () { throw { msg: 'Senha da casa incorreta, ou o convite expirou. Confira a senha ou peça um link novo.' }; }); })
+    .then(function () { return db.ref('casas/' + cv.casa).once('value'); })
     .then(function (snap) {
       var m = snap.val();
-      return derivarChave(senha, m.salt).then(function (k) {
-        return decifrar(k, m.verif).then(function () { S.meta = m; try { localStorage.removeItem(CHAVE_CONV); } catch (e) {} return entrouNaCasa(cv.casa, k, false); },
-          function () { return memRef.remove().then(function () { throw { msg: 'Senha da casa incorreta.' }; }); });
-      });
+      return decifrar(chave, m.verif).then(function () { S.meta = m; try { localStorage.removeItem(CHAVE_CONV); } catch (e) {} return entrouNaCasa(cv.casa, chave, false); },
+        function () { return memRef.remove().then(function () { throw { msg: 'Senha da casa incorreta.' }; }); });
     }).catch(function (e) { er.textContent = (e && e.msg) || 'Não foi possível entrar (' + ((e && e.code) || e) + ').'; })
     .then(function () { btn.disabled = false; btn.textContent = 'Entrar na casa'; });
 }
