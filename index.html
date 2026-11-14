@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0">
-<meta name="app-version" content="2.1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="app-version" content="2.14.0">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -346,12 +346,12 @@ body {
 .lanc-ponto { width: 3px; height: 36px; border-radius: 2px; flex-shrink: 0; }
 .lanc-info { flex: 1; min-width: 0; }
 .lanc-desc { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #111827; }
-.lanc-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.lanc-meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
 .lanc-valor { font-size: 14px; font-weight: 800; flex-shrink: 0; color: #111827; font-variant-numeric: tabular-nums; }
 .lanc-del { background: none; border: none; color: #d1d5db; font-size: 15px; cursor: pointer; padding: 4px; }
 .lanc-del:hover { color: #ef4444; }
 .lanc-parcela { font-size: 10px; font-weight: 700; background: rgba(99,102,241,.12); color: #6366f1; border: 1px solid rgba(99,102,241,.25); border-radius: 9px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; white-space: nowrap; }
-.vazio { text-align: center; padding: 28px 16px; color: #9ca3af; font-size: 14px; line-height: 1.5; }
+.vazio { text-align: center; padding: 28px 16px; color: #6b7280; font-size: 14px; line-height: 1.5; }
 /* ── PARCELAMENTO ── */
 .parcela-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .btn-parcela-toggle { font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px; border: 2px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; transition: all .2s; }
@@ -382,21 +382,21 @@ body {
 .parc-num        { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
 .parc-num-paga   { background:#dcfce7; color:#166534; }
 .parc-num-futura { background:#ede9fe; color:#5b21b6; border:1.5px dashed #a78bfa; }
-.parc-num-ausente{ background:#f3f4f6; color:#9ca3af; }
+.parc-num-ausente{ background:#f3f4f6; color:#6b7280; }
 .relcat-hero { text-align:center; padding:14px 0 10px; }
 .relcat-hero-val { font-size:34px; font-weight:900; letter-spacing:-.5px; }
-.relcat-hero-sub { font-size:12px; color:#9ca3af; margin-top:2px; }
+.relcat-hero-sub { font-size:12px; color:#6b7280; margin-top:2px; }
 .relcat-orc-row { display:flex; justify-content:space-between; font-size:12px; margin-top:10px; }
 .relcat-sub-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid #f3f4f6; }
 .relcat-sub-nome { width:88px; font-size:12px; color:#374151; font-weight:600; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .relcat-sub-bar-wrap { flex:1; background:#f3f4f6; border-radius:4px; height:7px; }
 .relcat-sub-bar-fill { height:7px; border-radius:4px; }
 .relcat-sub-val { font-size:12px; font-weight:800; flex-shrink:0; min-width:72px; text-align:right; }
-.relcat-sub-pct { font-size:11px; color:#9ca3af; width:30px; text-align:right; flex-shrink:0; }
+.relcat-sub-pct { font-size:11px; color:#6b7280; width:30px; text-align:right; flex-shrink:0; }
 .relcat-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
 .relcat-stat { background:#f9fafb; border-radius:12px; padding:10px 12px; }
 .relcat-stat-val { font-size:16px; font-weight:900; }
-.relcat-stat-lbl { font-size:11px; color:#9ca3af; margin-top:2px; }
+.relcat-stat-lbl { font-size:11px; color:#6b7280; margin-top:2px; }
 
 /* ── TOPO TELAS INTERNAS ── */
 .topo-add {
@@ -428,7 +428,7 @@ body {
 .form-group select:focus,
 .form-group textarea:focus { border-color: #1d4ed8; background: white; outline: none; }
 .form-group textarea { resize: none; height: 80px; }
-.form-group .dica { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+.form-group .dica { font-size: 11px; color: #6b7280; margin-top: 4px; }
 
 /* ── CAMPO VALOR ── */
 .wrap-valor { position: relative; }
@@ -443,7 +443,7 @@ body {
   transition: all .15s;
 }
 .opt-cat .ic { font-size: 22px; margin-bottom: 4px; }
-.opt-cat .nm { font-size: 11px; font-weight: 700; color: #9ca3af; }
+.opt-cat .nm { font-size: 11px; font-weight: 700; color: #6b7280; }
 .opt-cat.sel-carro       { border-color: #ef4444; background: #fef2f2; }
 .opt-cat.sel-carro .nm   { color: #dc2626; }
 .opt-cat.sel-diversos    { border-color: #f97316; background: #fff7ed; }
@@ -485,7 +485,7 @@ body {
 .add-body { padding: 14px; padding-bottom: 100px; }
 .add-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04); }
-.add-card-title { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase;
+.add-card-title { font-size: 10px; font-weight: 800; color: #6b7280; text-transform: uppercase;
   letter-spacing: .8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .add-step-n { width: 18px; height: 18px; border-radius: 50%; background: #1d4ed8;
   color: white; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center;
@@ -495,7 +495,7 @@ body {
 .cat-tile { border: 2px solid #e5e7eb; border-radius: 14px; padding: 18px 8px;
   text-align: center; cursor: pointer; background: #fafafa; transition: all .15s; }
 .cat-tile-ic { font-size: 28px; margin-bottom: 6px; }
-.cat-tile-nm { font-size: 12px; font-weight: 700; color: #9ca3af; }
+.cat-tile-nm { font-size: 12px; font-weight: 700; color: #6b7280; }
 .cat-tile.sel-carro      { border-color: #ef4444; background: #fef2f2; box-shadow: 0 0 0 3px #fee2e2; }
 .cat-tile.sel-carro .cat-tile-nm    { color: #dc2626; }
 .cat-tile.sel-diversos   { border-color: #f97316; background: #fff7ed; box-shadow: 0 0 0 3px #ffedd5; }
@@ -509,7 +509,7 @@ body {
 
 .valor-big-wrap { position: relative; }
 .valor-big-pre { position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-  font-size: 18px; font-weight: 700; color: #9ca3af; pointer-events: none; }
+  font-size: 18px; font-weight: 700; color: #6b7280; pointer-events: none; }
 .valor-big-input { width: 100%; padding: 16px 16px 16px 64px; font-size: 30px; font-weight: 800;
   letter-spacing: -1px; border: 2px solid #e5e7eb; border-radius: 14px; background: #fafafa;
   box-sizing: border-box; font-family: inherit; color: #111827; transition: border-color .2s, background .2s; }
@@ -526,11 +526,11 @@ body {
 
 .parc-toggle { display: flex; gap: 8px; }
 .parc-toggle-btn { flex: 1; padding: 13px 8px; border: 2px solid #e5e7eb; border-radius: 12px;
-  font-size: 14px; font-weight: 700; background: #fafafa; color: #9ca3af; cursor: pointer;
+  font-size: 14px; font-weight: 700; background: #fafafa; color: #6b7280; cursor: pointer;
   text-align: center; transition: all .15s; font-family: inherit; }
 .parc-toggle-btn.ativo { border-color: #6366f1; background: #eef2ff; color: #4338ca; }
 
-.opt-badge { font-size: 10px; font-weight: 600; color: #9ca3af; background: #f3f4f6;
+.opt-badge { font-size: 10px; font-weight: 600; color: #6b7280; background: #f3f4f6;
   border-radius: 20px; padding: 2px 8px; margin-left: 2px; text-transform: none; letter-spacing: 0; }
 .add-textarea { width: 100%; padding: 13px 14px; border: 1.5px solid #e5e7eb; border-radius: 12px;
   font-size: 16px; font-family: inherit; background: #fafafa; resize: none; height: 80px;
@@ -565,7 +565,7 @@ body {
   box-sizing: border-box; min-height: 54px;
 }
 .btn-whatsapp {
-  width: 100%; background: #25d366; color: white; border: none;
+  width: 100%; background: #128c4a; color: white; border: none;
   border-radius: 12px; padding: 13px; font-size: 14px; font-weight: 700;
   cursor: pointer; margin-top: 10px; font-family: inherit;
 }
@@ -591,15 +591,15 @@ body {
   flex: 1; min-width: 80px; padding: 9px 6px;
   border: 1.5px solid #e5e7eb; border-radius: 10px;
   background: white; font-size: 12px; font-weight: 700;
-  color: #9ca3af; cursor: pointer; font-family: inherit;
+  color: #6b7280; cursor: pointer; font-family: inherit;
   transition: all .15s;
 }
 .rel-per-btn.ativo { border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8; }
 .rel-metricas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .rel-met-card { background: white; border-radius: 14px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04); }
 .rel-met-val { font-size: 20px; font-weight: 900; margin-bottom: 2px; letter-spacing: -.5px; }
-.rel-met-lbl { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
-.rel-met-sub { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+.rel-met-lbl { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+.rel-met-sub { font-size: 11px; color: #6b7280; margin-top: 3px; }
 .rel-cat-bloco {
   background: white; border-radius: 14px; padding: 14px;
   margin-bottom: 8px;
@@ -613,17 +613,17 @@ body {
 .rel-cat-bloco.viagens     { border-color: #0284c7; }
 .rel-cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .rel-cat-nome { font-size: 14px; font-weight: 800; color: #111827; }
-.rel-cat-pct-total { font-size: 11px; color: #9ca3af; font-weight: 700; }
+.rel-cat-pct-total { font-size: 11px; color: #6b7280; font-weight: 700; }
 .rel-cat-nums { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .rel-cat-num { text-align: center; }
 .rel-cat-num-val { font-size: 15px; font-weight: 900; }
-.rel-cat-num-lbl { font-size: 9px; color: #9ca3af; text-transform: uppercase; letter-spacing: .3px; }
+.rel-cat-num-lbl { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: .3px; }
 .rel-top-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f9fafb; gap: 10px; }
 .rel-top-item:last-child { border-bottom: none; }
 .rel-top-num { font-size: 11px; font-weight: 800; color: #d1d5db; width: 16px; text-align: center; flex-shrink: 0; }
 .rel-top-info { flex: 1; min-width: 0; }
 .rel-top-desc { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rel-top-meta { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+.rel-top-meta { font-size: 10px; color: #6b7280; margin-top: 1px; }
 .rel-top-val { font-size: 13px; font-weight: 900; flex-shrink: 0; }
 .linha-rel { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f9fafb; font-size: 14px; }
 .linha-rel:last-child { border-bottom: none; }
@@ -633,7 +633,7 @@ body {
 /* ── VISUAIS RELATÓRIO ── */
 .heatmap-card { background: white; border-radius: 14px; padding: 14px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04); }
 .heatmap-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 4px; }
-.heatmap-dow-cell { text-align: center; font-size: 9px; font-weight: 700; color: #9ca3af; text-transform: uppercase; }
+.heatmap-dow-cell { text-align: center; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; }
 .heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
 .heatmap-cell { border-radius: 4px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; min-height: 30px; }
 .heatmap-empty { background: transparent; }
@@ -643,7 +643,7 @@ body {
 .heatmap-high  { background: #fca5a5; color: #7f1d1d; }
 .heatmap-leg   { display: flex; align-items: center; gap: 8px; margin-top: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .heatmap-leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-.heatmap-leg-lbl { font-size: 9px; color: #9ca3af; }
+.heatmap-leg-lbl { font-size: 9px; color: #6b7280; }
 .semana-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .semana-row:last-child { margin-bottom: 0; }
 .semana-lbl { min-width: 52px; font-size: 11px; font-weight: 700; color: #6b7280; }
@@ -653,7 +653,7 @@ body {
 .dias-limit-card { border-radius: 14px; padding: 16px; margin-bottom: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04); }
 .dias-limit-num { font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
 .dias-limit-lbl { font-size: 12px; font-weight: 700; color: #6b7280; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
-.dias-limit-sub { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+.dias-limit-sub { font-size: 11px; color: #6b7280; margin-top: 6px; }
 
 /* ── CARD PROJEÇÃO ── */
 .parc-proj-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(124,58,237,.13)}
@@ -668,7 +668,7 @@ body {
 /* ── TERMÔMETRO DA DÍVIDA ── */
 .termo-total-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
 .termo-total-val{font-size:26px;font-weight:900;color:#dc2626;letter-spacing:-1px}
-.termo-total-pago{font-size:11px;color:#9ca3af;font-weight:600;text-align:right}
+.termo-total-pago{font-size:11px;color:#6b7280;font-weight:600;text-align:right}
 .termo-prog-bg{height:10px;background:#fee2e2;border-radius:5px;overflow:hidden;margin-bottom:14px}
 .termo-prog-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .4s}
 .termo-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(220,38,38,.1)}
@@ -771,7 +771,7 @@ body {
 .lanc-edit:hover { color: #1d4ed8; }
 
 
-/* ══════ HomeVault — complementos ══════ */
+/* ══════ MinhaCasa — complementos ══════ */
 .hv-tabs { display:flex; background:#f3f4f6; border-radius:10px; padding:3px; margin-bottom:18px; }
 .hv-tabs button { flex:1; border:0; background:none; padding:9px; border-radius:8px; font-size:14px; font-weight:600; color:#6b7280; cursor:pointer; font-family:inherit; }
 .hv-tabs button.on { background:#fff; color:#111827; box-shadow:0 1px 3px rgba(0,0,0,.1); }
@@ -787,14 +787,14 @@ body {
 .cfg-sec { font-size:10px; color:rgba(255,255,255,.6); text-transform:uppercase; margin:4px 0 6px; letter-spacing:.4px; }
 .cfg-actions { flex-wrap:wrap; }
 .cfg-action-btn { min-width: calc(33% - 6px); }
-.lanc-autor { font-size:10px; color:#9ca3af; }
+.lanc-autor { font-size:10px; color:#6b7280; }
 /* Ajustes */
-.aj-sec { font-size:11px; font-weight:800; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; margin:16px 2px 8px; }
+.aj-sec { font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:1px; margin:16px 2px 8px; }
 .aj-linha { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid #f3f4f6; }
 .aj-linha:last-child { border-bottom:0; }
 .aj-ic { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:19px; flex:none; }
 .aj-nm { flex:1; min-width:0; font-weight:700; font-size:14px; color:#111827; }
-.aj-nm small { display:block; font-weight:500; font-size:11.5px; color:#9ca3af; margin-top:1px; }
+.aj-nm small { display:block; font-weight:500; font-size:11.5px; color:#6b7280; margin-top:1px; }
 .aj-btn { border:1.5px solid #e5e7eb; background:#f9fafb; border-radius:9px; padding:7px 11px; font-size:12.5px; font-weight:700; color:#374151; cursor:pointer; font-family:inherit; }
 .aj-btn.perigo { color:#dc2626; border-color:#fecaca; background:#fef2f2; }
 .aj-btn.pri { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
@@ -818,7 +818,7 @@ body {
 .hv-erro { color:#ef4444; font-size:13px; min-height:18px; margin-top:8px; }
 .add-select:disabled { opacity:.5; }
 .sem-tab { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
-.sem-tab th { font-size:9.5px; font-weight:800; color:#9ca3af; text-transform:uppercase; letter-spacing:.04em; text-align:right; padding:6px 4px; border-bottom:1.5px solid #e5e7eb; }
+.sem-tab th { font-size:9.5px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:.04em; text-align:right; padding:6px 4px; border-bottom:1.5px solid #e5e7eb; }
 .sem-tab td { padding:8px 4px; border-bottom:1px solid #f3f4f6; text-align:right; white-space:nowrap; }
 .sem-tab th:first-child, .sem-tab td:first-child { text-align:left; white-space:normal; }
 .sem-acoes { margin:4px 0 0; padding-left:20px; font-size:14px; line-height:1.45; color:#374151; }
@@ -861,6 +861,8 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 .hero-pill.sem-orc #txt-disponivel { color: #fde68a !important; font-size: 17px; }
 .hero-pill.sem-orc .hero-pill-label { display: none; }
 .hero-pill.sem-orc #txt-restante { opacity: .9 !important; font-size: 11px !important; }
+/* ── Rodada 3d (14/11/2026): zoom liberado sem o iPhone ampliar sozinho ao tocar num campo ── */
+@media (max-width: 719px) { input, select, textarea { font-size: 16px !important; } }
 /* ── Rodada 3b (14/11/2026): no computador, o app vira uma coluna central em vez de esticar ── */
 @media (min-width: 720px) {
   html { background: #e2e8f0; }
@@ -1092,7 +1094,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <div id="hist-nav-mes" style="display:none"><div class="nav-mes" style="padding:8px 0 0"><button id="hist-mes-ant">‹</button><span id="label-hist">—</span><button id="hist-mes-prox">›</button></div></div>
       <div id="hist-custom-datas" style="display:none;margin-top:10px">
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="hist-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#aaa">→</span>
+          <input type="date" id="hist-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#6b7280">→</span>
           <input type="date" id="hist-fim" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px">
         </div>
       </div>
@@ -1126,7 +1128,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       </div>
       <div id="rel-custom-datas" style="display:none;margin-top:10px">
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="rel-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#aaa">→</span>
+          <input type="date" id="rel-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#6b7280">→</span>
           <input type="date" id="rel-fim" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px">
         </div>
       </div>
@@ -1148,7 +1150,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       </div>
       <div id="relcat-custom-datas" style="display:none;margin-top:10px">
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="relcat-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#aaa">→</span>
+          <input type="date" id="relcat-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#6b7280">→</span>
           <input type="date" id="relcat-fim" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px">
         </div>
       </div>
@@ -1172,7 +1174,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       </div>
       <div id="proj-custom-datas" style="display:none;margin-top:10px">
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="proj-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#aaa">→</span>
+          <input type="date" id="proj-ini" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px"><span style="color:#6b7280">→</span>
           <input type="date" id="proj-fim" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px">
         </div>
       </div>
@@ -1262,7 +1264,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <button class="aj-btn aj-full" id="aj-bloquear">🔒 Bloquear este aparelho</button>
       <button class="aj-btn perigo aj-full" data-acao="sair">✕ Sair da conta</button>
     </div>
-    <div style="text-align:center;font-size:11px;color:#9ca3af;margin:14px 0">MinhaCasa <span id="aj-versao"></span></div>
+    <div style="text-align:center;font-size:11px;color:#6b7280;margin:14px 0">MinhaCasa <span id="aj-versao"></span></div>
   </div>
 </div>
 <input type="file" id="inp-restaurar" accept=".json,application/json" style="display:none">

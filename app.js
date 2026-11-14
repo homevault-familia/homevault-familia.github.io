@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.13.0';
+var VERSAO = '2.14.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -446,7 +446,7 @@ function renderizarPizza(tots, total) {
     var pct = orc > 0 ? (v / orc * 100).toFixed(0) : (total > 0 ? (v / total * 100).toFixed(0) : 0);
     var cor = v > orc && orc > 0 ? '#f44336' : c.cor;
     return '<div class="pizza-item"><div class="pizza-cor" style="background:' + cor + '"></div>' +
-      '<div class="pizza-txt">' + esc(c.nome) + ' <span style="color:#aaa;font-size:11px">(' + pct + '% ' + (orc > 0 ? 'do orç.' : 'do total') + ')</span></div>' +
+      '<div class="pizza-txt">' + esc(c.nome) + ' <span style="color:#6b7280;font-size:11px">(' + pct + '% ' + (orc > 0 ? 'do orç.' : 'do total') + ')</span></div>' +
       '<div class="pizza-val" style="color:' + cor + '">' + formatar(v) + '</div></div>';
   }).join('') + '</div>';
 }
@@ -604,7 +604,7 @@ function irParaCategoria(cat, soRender) {
   lista.sort(function (a, b) { return b.data.localeCompare(a.data); });
   $('topo-categoria').style.background = 'linear-gradient(160deg,' + c.cor + 'cc,' + c.cor + ')';
   $('titulo-categoria').textContent = c.emoji + ' ' + c.nome;
-  $('resumo-categoria').innerHTML = '<div style="text-align:center;padding:8px 0 12px"><div style="font-size:11px;color:#aaa;text-transform:uppercase;margin-bottom:4px">' +
+  $('resumo-categoria').innerHTML = '<div style="text-align:center;padding:8px 0 12px"><div style="font-size:11px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">' +
     (cat === PARC ? 'Total Mensal Ativo' : 'Total do Período') + '</div><div style="font-size:32px;font-weight:900;color:' + c.cor + '">' + formatar(total) + '</div></div>';
   var pm = buildPagasMap(todos);
   $('lista-categoria').innerHTML = lista.length ? lista.map(function (l) { return linhaLanc(l, pm, true); }).join('') : '<div class="vazio">📭 Sem lançamentos neste período</div>';
@@ -850,22 +850,23 @@ function renderizarRelatorio() {
     '<div class="rel-met-card"><div class="rel-met-val" style="color:#1565c0">' + formatar(grand) + '</div><div class="rel-met-lbl">Total Gasto</div><div class="rel-met-sub">' + diasCom + ' dias c/ gasto</div></div>' +
     (lim > 0 ? '<div class="rel-met-card"><div class="rel-met-val" style="color:' + (disp < 0 ? '#f44336' : '#43a047') + '">' + formatar(disp) + '</div><div class="rel-met-lbl">Disponível</div><div class="rel-met-sub">Limite: ' + formatar(lim) + '</div></div>' +
     '<div class="rel-met-card"><div class="rel-met-val" style="color:' + corLim + '">' + pctLim.toFixed(1) + '%</div><div class="rel-met-lbl">% do Limite</div><div class="rel-met-sub">' + T.nComuns + ' lançamentos</div></div>'
-    : '<div class="rel-met-card" style="grid-column:span 2;cursor:pointer" id="rel-sem-orc"><div class="rel-met-val" style="color:#b45309;font-size:17px">Sem orçamento definido</div><div class="rel-met-sub" style="color:#4b5563">Toque para informar o limite do período e ver quanto ainda pode gastar. ' + T.nComuns + ' lançamentos no período.</div></div>') +
+    : '') +
     '<div class="rel-met-card" style="background:' + (excede ? '#fef2f2' : dentro ? '#f0fdf4' : 'white') + ';border:' + (excede ? '2px solid #ef4444' : dentro ? '2px solid #22c55e' : 'none') + '">' +
     '<div class="rel-met-val" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#555') + '">' + formatar(mediaDia) + '</div><div class="rel-met-lbl">Média por dia</div>' +
     '<div class="rel-met-sub" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#9ca3af') + ';font-weight:700">Projeção: ' + formatar(projecao) + '</div></div>' +
     (maiorDia ? '<div class="rel-met-card" style="grid-column:1/-1"><div class="rel-met-val" style="color:#e53935;font-size:15px">' + formatar(maiorVal) + '</div><div class="rel-met-lbl">Maior gasto — ' + formatarData(maiorDia) + '</div></div>' : '') +
     '</div>';
+  if (!(lim > 0)) met += '<div class="card" style="cursor:pointer;border:1px solid #fcd34d;background:#fffbeb" id="rel-sem-orc"><div style="color:#b45309;font-size:16px;font-weight:800">Sem orçamento definido</div><div style="font-size:13px;color:#4b5563;margin-top:4px">Toque para informar o limite do período e ver quanto ainda pode gastar. ' + T.nComuns + ' lançamentos no período.</div></div>';
 
   // Subtotais por subcategoria
   var subTot = {};
   T.lista.forEach(function (l) { if (l.cat === PARC || !l.sub) return; var k = l.cat + '|' + l.sub; subTot[k] = (subTot[k] || 0) + l.valor; });
-  var cats = '<div style="font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Por Categoria</div>' +
+  var cats = '<div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Por Categoria</div>' +
     todasCats().map(function (c) {
       var g = T.tots[c.id] || 0, o = +c.orc || 0, pC = o > 0 ? Math.min(g / o * 100, 100) : 0, pTot = grand > 0 ? g / grand * 100 : 0;
       var corB = g > o && o > 0 ? '#f44336' : pC >= 80 ? '#ff9800' : c.cor, restC = o - g;
       var barra = o > 0 ? '<div class="orc-barra-fundo"><div class="orc-barra-fill" style="width:' + pC.toFixed(1) + '%;background:' + corB + '"></div></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px"><span style="color:#aaa">' + pC.toFixed(0) + '% do orçado ' + formatar(o) + '</span>' +
+        '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px"><span style="color:#6b7280">' + pC.toFixed(0) + '% do orçado ' + formatar(o) + '</span>' +
         '<span style="color:' + (restC < 0 ? '#f44336' : '#43a047') + ';font-weight:700">' + (restC >= 0 ? 'sobra ' : 'excedeu ') + formatar(Math.abs(restC)) + '</span></div>' : '';
       var subs = c.subs.map(function (s) {
         var v = subTot[c.id + '|' + s.id]; if (!v) return '';
@@ -892,7 +893,7 @@ function renderizarRelatorio() {
     var corD = exc ? '#ef4444' : n <= 7 ? '#f97316' : n <= 15 ? '#eab308' : '#22c55e';
     var sub = exc ? 'Limite excedido em ' + formatar(Math.abs(dispC)) : semRitmo ? 'Sem gastos no período' : formatar(media) + '/dia · sobra ' + formatar(dispC);
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6"><div style="font-size:22px;width:32px;text-align:center;flex-shrink:0">' + esc(c.emoji) + '</div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#111827">' + esc(c.nome) + '</div><div style="font-size:10px;color:#9ca3af;margin-top:1px">' + sub + '</div></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#111827">' + esc(c.nome) + '</div><div style="font-size:10px;color:#6b7280;margin-top:1px">' + sub + '</div></div>' +
       '<div style="text-align:right;flex-shrink:0"><div style="font-size:26px;font-weight:900;color:' + corD + ';line-height:1;letter-spacing:-1px">' + (exc ? '—' : semRitmo ? '∞' : n) + '</div>' +
       '<div style="font-size:9px;font-weight:700;color:' + corD + ';text-transform:uppercase;letter-spacing:.4px">' + (exc || semRitmo ? '' : 'dias') + '</div></div></div>';
   }).join('');
@@ -917,12 +918,12 @@ function renderizarRelatorio() {
   var sem = '<div class="card" style="margin-bottom:8px"><div class="card-titulo">📅 Semana a Semana</div>' + semanas.map(function (s) {
     var pct = maxSem > 0 ? (s.total / maxSem * 100).toFixed(1) : 0, orcSem = orcDia * s.dias, op = orcSem > 0 ? Math.round(s.total / orcSem * 100) : null;
     var cor = op === null ? '#1d4ed8' : op <= 50 ? '#22c55e' : op <= 85 ? '#f59e0b' : '#ef4444';
-    return '<div class="semana-row"><div class="semana-lbl">' + s.lbl + (s.dias < 7 ? ' <span style="font-size:10px;color:#aaa">(' + s.dias + 'd)</span>' : '') + '</div>' +
+    return '<div class="semana-row"><div class="semana-lbl">' + s.lbl + (s.dias < 7 ? ' <span style="font-size:10px;color:#6b7280">(' + s.dias + 'd)</span>' : '') + '</div>' +
       '<div class="semana-barra-bg"><div class="semana-barra-fill" style="width:' + pct + '%;background:' + cor + '"></div></div><div class="semana-val" style="color:' + cor + '">' + formatar(s.total) + '</div>' +
       (op !== null ? '<span style="font-size:11px;font-weight:700;color:' + cor + ';min-width:38px;text-align:right">' + op + '%</span>' : '') + '</div>';
-  }).join('') + (orcDia > 0 ? '<div style="font-size:11px;color:#9ca3af;margin-top:6px;text-align:right">Limite: ' + formatar(lim) + ' ÷ ' + heatDays.length + ' dias</div>' : '') + '</div>';
+  }).join('') + (orcDia > 0 ? '<div style="font-size:11px;color:#6b7280;margin-top:6px;text-align:right">Limite: ' + formatar(lim) + ' ÷ ' + heatDays.length + ' dias</div>' : '') + '</div>';
 
-  el.innerHTML = '<div style="font-size:12px;color:#aaa;font-weight:600;margin-bottom:10px;text-align:center">📅 ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '</div>' +
+  el.innerHTML = '<div style="font-size:12px;color:#6b7280;font-weight:600;margin-bottom:10px;text-align:center">📅 ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '</div>' +
     met + cats + top + diasLim + heat + sem +
     '<div class="card"><button class="btn-whatsapp" id="rel-wa">📱 Enviar por WhatsApp</button></div>';
   if ($('rel-sem-orc')) $('rel-sem-orc').onclick = abrirOrcamentoInicial;
@@ -970,7 +971,7 @@ function renderizarRelcat() {
   var hero = '<div class="card" style="margin-bottom:10px"><div class="relcat-hero"><div class="relcat-hero-val" style="color:' + cor + '">' + formatar(total) + '</div>' +
     '<div class="relcat-hero-sub">' + (c.id === PARC ? lista.length + ' planos · compromisso mensal' : lista.length + ' lançamentos · ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim)) + '</div></div>' +
     (orc > 0 ? '<div class="orc-barra-fundo" style="height:10px;margin-top:8px"><div class="orc-barra-fill" style="width:' + pctOrc.toFixed(1) + '%;background:' + corB + '"></div></div>' +
-      '<div class="relcat-orc-row"><span style="color:#aaa">Orçado: ' + formatar(orc) + '</span><span style="color:' + corB + ';font-weight:800">' + pctOrc.toFixed(1) + '% utilizado</span>' +
+      '<div class="relcat-orc-row"><span style="color:#6b7280">Orçado: ' + formatar(orc) + '</span><span style="color:' + corB + ';font-weight:800">' + pctOrc.toFixed(1) + '% utilizado</span>' +
       '<span style="color:' + (total > orc ? '#f44336' : '#43a047') + ';font-weight:700">' + (total > orc ? 'Excedeu ' : 'Sobra ') + formatar(Math.abs(orc - total)) + '</span></div>' : '') + '</div>';
   var stats = '<div class="relcat-stats">' +
     '<div class="relcat-stat"><div class="relcat-stat-val" style="color:' + cor + '">' + formatar(mediaDia) + '</div><div class="relcat-stat-lbl">Média por dia c/ gasto</div></div>' +
@@ -1098,7 +1099,7 @@ function renderizarTermometroDivida() {
   var totalOrig = planos.reduce(function (s, p) { return s + p.total * p.valorParc; }, 0), pctPago = totalOrig > 0 ? (totalOrig - saldoHoje) / totalOrig * 100 : 0;
   var base = new Date(); base.setDate(1);
   var html = '<div class="card" style="margin-bottom:14px;border-left:4px solid #dc2626"><div class="card-titulo" style="color:#7f1d1d">💳 Termômetro da Dívida</div>' +
-    '<div style="font-size:.72rem;color:#aaa;margin-bottom:10px">Total ainda a pagar em todos os planos ativos</div>' +
+    '<div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">Total ainda a pagar em todos os planos ativos</div>' +
     '<div class="termo-total-row"><div class="termo-total-val">' + formatar(saldoHoje) + '</div><div class="termo-total-pago"><span style="color:#16a34a;font-weight:800">' + pctPago.toFixed(0) + '%</span> já pago<br><span style="font-size:10px">Total original: ' + formatar(totalOrig) + '</span></div></div>' +
     '<div class="termo-prog-bg"><div class="termo-prog-fill" style="width:' + pctPago.toFixed(1) + '%"></div></div>';
   for (var i = 0; i < 48; i++) {
@@ -1125,7 +1126,7 @@ function renderizarProjecaoParcelados() {
     maxBar = Math.max(maxBar, tot);
     linhas.push({ m: dt.getMonth(), a: dt.getFullYear(), tot: tot, quit: quit, hoje: i === 0 });
   }
-  el.innerHTML = '<div class="card" style="margin-bottom:14px"><div class="card-titulo" style="color:#5b21b6">📦 Projeção de Parcelados — 24 meses</div><div style="font-size:.72rem;color:#aaa;margin-bottom:10px">Compromisso mensal com planos ativos</div>' +
+  el.innerHTML = '<div class="card" style="margin-bottom:14px"><div class="card-titulo" style="color:#5b21b6">📦 Projeção de Parcelados — 24 meses</div><div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">Compromisso mensal com planos ativos</div>' +
     linhas.filter(function (l) { return l.tot > 0 || l.hoje; }).map(function (l) {
       var badge = (l.hoje ? '<span class="parc-proj-badge parc-proj-hoje">hoje</span>' : '') + l.quit.map(function (d) { return ' <span class="parc-proj-badge parc-proj-fim">✓ ' + esc(d) + '</span>'; }).join('');
       return '<div class="parc-proj-row"><div class="parc-proj-mes">' + MESES_C[l.m] + '/' + String(l.a).slice(2) + '</div><div class="parc-proj-barra-bg"><div class="parc-proj-barra-fill" style="width:' + (maxBar ? l.tot / maxBar * 100 : 0).toFixed(1) + '%"></div></div>' +
@@ -1228,7 +1229,7 @@ function pintarCartaoSemana() {
   try { if (localStorage.getItem(chaveSemFechado()) === r.seg) { wrap.innerHTML = ''; return; } } catch (e) {}
   var st = statusSemana(r), cor = corStatus(st), ref = r.alvoSem > 0 ? 'alvo ' + m0(r.alvoSem) : 'seu normal ' + m0(r.normalTot), v = r.vaz[0];
   wrap.innerHTML = '<div style="background:#fff;border-radius:16px;padding:14px 16px;margin:0 0 12px;box-shadow:0 2px 12px rgba(0,0,0,.06);border-left:5px solid ' + cor + ';position:relative">' +
-    '<button type="button" id="sem-fechar" aria-label="Fechar" style="position:absolute;top:8px;right:8px;border:0;background:none;font-size:18px;color:#9ca3af;cursor:pointer;padding:4px 8px">×</button>' +
+    '<button type="button" id="sem-fechar" aria-label="Fechar" style="position:absolute;top:8px;right:8px;border:0;background:none;font-size:18px;color:#6b7280;cursor:pointer;padding:4px 8px">×</button>' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:#6b7280;text-transform:uppercase">📌 Semana ' + semFD(r.seg) + ' – ' + semFD(r.dom) + '</div>' +
     '<div style="font-size:20px;font-weight:800;margin:4px 0 2px;color:' + cor + '">' + m0(r.tot) + ' <span style="font-size:13px;font-weight:600;color:#6b7280">· ' + ref + '</span></div>' +
     (v ? '<div style="font-size:13px;color:#374151;margin-top:4px">Maior vazamento: <b>' + esc(v.nome) + '</b>, ' + m0(v.sem) + ' (normal ' + m0(v.normal) + ')</div>'
@@ -1269,14 +1270,14 @@ function renderizarListaSemanas() {
   var diasC = semND(c.inicio, c.fim), decor = hj < c.inicio ? 0 : Math.min(diasC, semND(c.inicio, ate));
   var topo = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:2px 2px 6px">' +
     '<div><div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">Gasto no período</div>' +
-    '<div style="font-size:22px;font-weight:900;color:' + corL + '">' + m0(gasto) + (lim > 0 ? ' <span style="font-size:13px;font-weight:600;color:#9ca3af">de ' + m0(lim) + '</span>' : '') + '</div></div>' +
+    '<div style="font-size:22px;font-weight:900;color:' + corL + '">' + m0(gasto) + (lim > 0 ? ' <span style="font-size:13px;font-weight:600;color:#6b7280">de ' + m0(lim) + '</span>' : '') + '</div></div>' +
     '<div style="text-align:right;font-size:12px;color:#6b7280">' + (k < 0 ? 'período fechado' : 'dia ' + decor + ' de ' + diasC) + (lim > 0 ? '<br><b style="color:' + corL + '">' + pctL.toFixed(0) + '% do limite</b>' : '') + '</div></div>' +
     (lim > 0 ? '<div class="orc-barra-fundo" style="margin:0 2px 12px"><div class="orc-barra-fill" style="width:' + Math.min(pctL, 100).toFixed(1) + '%;background:' + corL + '"></div></div>' : '');
   var linhas = sem.map(function (x, i) {
     var sel = S.semAberta && !x.futura && x.off === S.semOff, st = x.r && x.r.n ? statusSemana(x.r) : null, cor = st ? corStatus(st) : '#d1d5db';
-    var dir = x.futura ? '<span style="color:#9ca3af;font-size:12px">ainda não começou</span>'
-      : !x.r || !x.r.n ? '<span style="color:#9ca3af;font-size:12px">sem gastos</span>'
-      : '<b style="color:' + cor + ';font-size:15px">' + m0(x.r.tot) + '</b>' + (x.r.alvoSem > 0 ? '<div style="font-size:11px;color:#9ca3af">alvo ' + m0(x.r.alvoSem) + '</div>' : '');
+    var dir = x.futura ? '<span style="color:#6b7280;font-size:12px">ainda não começou</span>'
+      : !x.r || !x.r.n ? '<span style="color:#6b7280;font-size:12px">sem gastos</span>'
+      : '<b style="color:' + cor + ';font-size:15px">' + m0(x.r.tot) + '</b>' + (x.r.alvoSem > 0 ? '<div style="font-size:11px;color:#6b7280">alvo ' + m0(x.r.alvoSem) + '</div>' : '');
     return '<button type="button" class="sem-item' + (sel ? ' sel' : '') + '" data-semoff="' + x.off + '"' + (x.futura ? ' disabled' : '') +
       ' style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;padding:10px 12px;margin:0 0 6px;border-radius:12px;cursor:' + (x.futura ? 'default' : 'pointer') + ';' +
       'border:' + (sel ? '2px solid #7c3aed' : '1px solid #e5e7eb') + ';background:' + (sel ? '#f5f3ff' : x.futura ? '#f9fafb' : '#fff') + ';opacity:' + (x.futura ? '.6' : '1') + '">' +
@@ -1291,7 +1292,7 @@ function renderizarListaSemanas() {
   if (el.contains && el.contains(corpo)) el.parentNode.insertBefore(corpo, el.nextSibling);
   el.innerHTML = '<div class="card" style="padding:12px 12px 6px">' + topo +
     '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:0 2px 8px">Semanas do período · toque para abrir ou fechar</div>' + linhas +
-    '<div style="font-size:11px;color:#9ca3af;margin:2px 2px 6px">Semanas de segunda a domingo. A cor compara o gasto com o alvo semanal: verde abaixo, amarelo perto, vermelho acima.</div></div>';
+    '<div style="font-size:11px;color:#6b7280;margin:2px 2px 6px">Semanas de segunda a domingo. A cor compara o gasto com o alvo semanal: verde abaixo, amarelo perto, vermelho acima.</div></div>';
   qsa('#sem-semanas .sem-item').forEach(function (b) {
     if (b.disabled) return;
     if (S.semAberta && b.classList.contains('sel')) b.parentNode.insertBefore(corpo, b.nextSibling);
@@ -1320,22 +1321,22 @@ function renderizarSemana() {
     '<div class="card-titulo">' + (r.parcial ? 'Semana em andamento · até hoje (' + r.diasDec + ' de 7 dias)' : 'Resumo da semana') + '</div>' +
     '<div style="font-size:30px;font-weight:900;color:' + cor + ';letter-spacing:-1px">' + m0(r.tot) + '</div>' +
     '<div style="font-size:13px;color:#6b7280;margin-top:2px">' + r.n + ' lançamentos · ' + r.diasGasto + ' de ' + r.diasDec + ' dias com gasto</div>' +
-    '<div style="font-size:13px;color:#374151;margin-top:8px">' + ref + '<br>Seu normal: <b>' + m0(r.normalTot) + '</b> ' + (r.parcial ? 'até este dia da semana' : 'por semana') + ' <span style="color:#9ca3af">(média das ' + r.semBase + ' semana' + (r.semBase > 1 ? 's' : '') + ' anteriores)</span></div>' +
-    (r.parcial ? '<div style="font-size:11.5px;color:#9ca3af;margin-top:8px">A semana ainda não terminou. Normal e alvo são proporcionais aos ' + r.diasDec + ' dias já passados. O relatório completo sai na segunda-feira.</div>' : '') +
+    '<div style="font-size:13px;color:#374151;margin-top:8px">' + ref + '<br>Seu normal: <b>' + m0(r.normalTot) + '</b> ' + (r.parcial ? 'até este dia da semana' : 'por semana') + ' <span style="color:#6b7280">(média das ' + r.semBase + ' semana' + (r.semBase > 1 ? 's' : '') + ' anteriores)</span></div>' +
+    (r.parcial ? '<div style="font-size:11.5px;color:#6b7280;margin-top:8px">A semana ainda não terminou. Normal e alvo são proporcionais aos ' + r.diasDec + ' dias já passados. O relatório completo sai na segunda-feira.</div>' : '') +
     (r.poucoHist ? '<div class="alerta atencao" style="margin:10px 0 0">Ainda há pouco histórico. O "normal" fica mais preciso depois de algumas semanas de lançamentos.</div>' : '') + '</div>';
   var catsH = r.cats.filter(function (c) { return c.orcSem > 0; }).map(function (c) {
     var pct = Math.min(c.sem / c.orcSem * 100, 100), corB = c.exc > 0 ? '#f44336' : pct >= 80 ? '#ff9800' : c.cor;
     return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>' + esc(c.emoji + ' ' + c.nome) + '</span>' +
-      '<span><b style="color:' + (c.exc > 0 ? '#dc2626' : '#16a34a') + '">' + m0(c.sem) + '</b> <span style="color:#9ca3af">/ ' + m0(c.orcSem) + '</span></span></div>' +
+      '<span><b style="color:' + (c.exc > 0 ? '#dc2626' : '#16a34a') + '">' + m0(c.sem) + '</b> <span style="color:#6b7280">/ ' + m0(c.orcSem) + '</span></span></div>' +
       '<div class="orc-barra-fundo" style="margin-top:4px"><div class="orc-barra-fill" style="width:' + pct.toFixed(1) + '%;background:' + corB + '"></div></div></div>';
   }).join('');
   var catsCard = catsH ? '<div class="card"><div class="card-titulo">Categorias × orçamento semanal</div>' + catsH +
-    '<div style="font-size:11px;color:#9ca3af;margin-top:6px">Orçamento semanal = orçamento do período ÷ dias do período × 7' + (r.parcial ? ', proporcional aos dias já passados' : '') + '</div></div>' : '';
+    '<div style="font-size:11px;color:#6b7280;margin-top:6px">Orçamento semanal = orçamento do período ÷ dias do período × 7' + (r.parcial ? ', proporcional aos dias já passados' : '') + '</div></div>' : '';
   var linhas = r.vaz.length ? r.vaz.map(function (x) {
-    return '<tr><td><b>' + esc(x.nome) + '</b><br><span style="font-size:11px;color:#9ca3af">' + esc(NOME(x.cat)) + '</span></td><td>' + m0(x.sem) + '</td><td>' + m0(x.normal) + '</td><td style="color:#dc2626;font-weight:800">+' + m0(x.exc) + '</td><td>' + x.n + '</td></tr>';
+    return '<tr><td><b>' + esc(x.nome) + '</b><br><span style="font-size:11px;color:#6b7280">' + esc(NOME(x.cat)) + '</span></td><td>' + m0(x.sem) + '</td><td>' + m0(x.normal) + '</td><td style="color:#dc2626;font-weight:800">+' + m0(x.exc) + '</td><td>' + x.n + '</td></tr>';
   }).join('') : '<tr><td colspan="5" style="color:#16a34a">Nenhum lugar ficou acima do seu normal. 👏</td></tr>';
   var vazCard = '<div class="card"><div class="card-titulo">Onde mais vazou</div>' +
-    '<div style="font-size:11.5px;color:#9ca3af;margin:-4px 0 8px">"Vazou" = gastou mais do que o seu normal naquele lugar</div>' +
+    '<div style="font-size:11.5px;color:#6b7280;margin:-4px 0 8px">"Vazou" = gastou mais do que o seu normal naquele lugar</div>' +
     '<div style="overflow-x:auto"><table class="sem-tab"><thead><tr><th>Subcategoria</th><th>Semana</th><th>Normal</th><th>A mais</th><th>Qtd</th></tr></thead><tbody>' + linhas + '</tbody></table></div></div>';
   var acoesCard = '<div class="card" style="border-left:5px solid #7c3aed"><div class="card-titulo">✅ O que fazer nesta semana</div><ol class="sem-acoes">' +
     r.acoes.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ol>' +
@@ -1357,7 +1358,7 @@ function exportarPDFSemana(r) {
   var st = statusSemana(r), cor = corStatus(st);
   var titulo = (r.parcial ? 'Semana atual (até ' + semFD(r.ate) + ')' : 'Semana') + ' · ' + semFD(r.seg) + ' – ' + semFD(r.dom);
   var vaz = r.vaz.length ? r.vaz.map(function (x) {
-    return '<tr><td><b>' + esc(x.nome) + '</b><br><span style="font-size:11px;color:#9ca3af">' + esc(NOME(x.cat)) + '</span></td><td class="v">' + m0(x.sem) + '</td><td class="v" style="color:#6b7280">' + m0(x.normal) + '</td><td class="v" style="color:#dc2626">+' + m0(x.exc) + '</td><td class="v">' + x.n + '</td></tr>';
+    return '<tr><td><b>' + esc(x.nome) + '</b><br><span style="font-size:11px;color:#6b7280">' + esc(NOME(x.cat)) + '</span></td><td class="v">' + m0(x.sem) + '</td><td class="v" style="color:#6b7280">' + m0(x.normal) + '</td><td class="v" style="color:#dc2626">+' + m0(x.exc) + '</td><td class="v">' + x.n + '</td></tr>';
   }).join('') : '<tr><td colspan="5" style="color:#16a34a">Nenhum lugar ficou acima do seu normal. 👏</td></tr>';
   var cats = r.cats.filter(function (c) { return c.orcSem > 0 || c.sem > 0; }).map(function (c) {
     var pct = c.orcSem > 0 ? Math.min(c.sem / c.orcSem * 100, 100) : 0, corB = c.exc > 0 ? '#f44336' : pct >= 80 ? '#ff9800' : c.cor;
@@ -1368,15 +1369,15 @@ function exportarPDFSemana(r) {
   var corpo = '<style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}h2{font-size:15px;margin:22px 0 8px;color:#0f172a}ol{margin:0;padding-left:20px}ol li{margin:6px 0;font-size:13.5px;line-height:1.45}</style>' +
     '<h1>📌 ' + esc(S.cfg.nome || 'MinhaCasa') + ' — Relatório semanal</h1><div class="sub">' + esc(titulo) + '</div>' +
     '<div style="background:#f8fafc;border-left:5px solid ' + cor + ';border-radius:10px;padding:14px 18px">' +
-      '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af">' + (r.parcial ? 'Gasto até hoje' : 'Gasto da semana') + '</div>' +
+      '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#6b7280">' + (r.parcial ? 'Gasto até hoje' : 'Gasto da semana') + '</div>' +
       '<div style="font-size:28px;font-weight:900;color:' + cor + '">' + m0(r.tot) + '</div>' +
       '<div style="font-size:13px;color:#374151;margin-top:4px">' + r.n + ' lançamentos · ' + r.diasGasto + ' de ' + r.diasDec + ' dias com gasto<br>' +
       (r.alvoSem > 0 ? (r.parcial ? 'Alvo até hoje: ' : 'Alvo da semana: ') + '<b>' + m0(r.alvoSem) + '</b> · ' : '') +
-      'Seu normal: <b>' + m0(r.normalTot) + '</b> <span style="color:#9ca3af">(média das ' + r.semBase + ' semana' + (r.semBase > 1 ? 's' : '') + ' anteriores)</span></div></div>' +
+      'Seu normal: <b>' + m0(r.normalTot) + '</b> <span style="color:#6b7280">(média das ' + r.semBase + ' semana' + (r.semBase > 1 ? 's' : '') + ' anteriores)</span></div></div>' +
     '<h2>🔻 Onde mais vazou</h2><table><thead><tr>' + th('Subcategoria') + th('Semana', 'right') + th('Normal', 'right') + th('A mais', 'right') + th('Qtd', 'right') + '</tr></thead><tbody>' + vaz + '</tbody></table>' +
     '<h2>✅ O que fazer nesta semana</h2><ol>' + r.acoes.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ol>' +
     (cats ? '<h2>📊 Categorias × orçamento semanal</h2><table><thead><tr>' + th('Categoria') + th('Gasto', 'right') + th('Orçamento', 'right') + '</tr></thead><tbody>' + cats + '</tbody></table>' : '') +
-    '<div style="margin-top:22px;font-size:11px;color:#9ca3af;text-align:center">Gerado em ' + new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) + ' · MinhaCasa</div>';
+    '<div style="margin-top:22px;font-size:11px;color:#6b7280;text-align:center">Gerado em ' + new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) + ' · MinhaCasa</div>';
   abrirImpressao('MinhaCasa — ' + titulo, corpo);
 }
 
@@ -1971,7 +1972,7 @@ function exportarCSV() {
   lancamentos().sort(function (a, b) { return a.data < b.data ? -1 : 1; }).forEach(function (l) {
     linhas.push([l.data, q(NOME(l.cat)), q(nomeSub(l.cat, l.sub)), q(l.desc), l.parcela ? l.parcela.n + '/' + l.parcela.total : '', l.valor.toFixed(2).replace('.', ',')].join(';'));
   });
-  baixar('homevault-' + hoje() + '.csv', 'text/csv;charset=utf-8', '﻿' + linhas.join('\r\n'));
+  baixar('minhacasa-' + hoje() + '.csv', 'text/csv;charset=utf-8', '﻿' + linhas.join('\r\n'));
 }
 function importarJSON(arquivo) {
   var r = new FileReader();
