@@ -1,4 +1,4 @@
-/* HomeVault 2 — app.js
+/* MinhaCasa (antigo MinhaCasa) — app.js
  * Mesmo desenho e mesmas regras do "Gastos da Casa", com categorias e subcategorias
  * definidas por cada família. Dados criptografados no aparelho (AES-GCM 256, chave
  * derivada da senha da casa com PBKDF2-SHA256) antes de irem ao Firebase.
@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.4.0';
+var VERSAO = '2.5.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -328,7 +328,7 @@ function renderizar() {
   var c = S.cfg, p = c.periodo, T = totaisPeriodo(p);
   var hj = hoje();
   var totalHoje = T.todos.filter(function (l) { return l.data === hj; }).reduce(function (s, l) { return s + l.valor; }, 0);
-  $('txt-casa').textContent = '🏠 ' + (c.nome || 'HomeVault');
+  $('txt-casa').textContent = '🏠 ' + (c.nome || 'MinhaCasa');
   $('txt-total').textContent = formatar(T.comum);
   var parc = T.tots[PARC] || 0;
   $('hero-parc-wrap').style.display = parc > 0 ? '' : 'none';
@@ -723,7 +723,7 @@ function compartilharHistorico() {
     msg += '\n📅 *' + formatarData(d) + '* — ' + formatar(porDia[d].reduce(function (s, l) { return s + l.valor; }, 0)) + '\n';
     porDia[d].forEach(function (l) { var sb = nomeSub(l.cat, l.sub); msg += '  • ' + NOME(l.cat) + (sb ? ' (' + sb + ')' : '') + ': ' + formatar(l.valor) + (l.desc ? ' — ' + l.desc : '') + '\n'; });
   });
-  msg += '\n━━━━━━━━━━━━━━━━\n💰 *Total: ' + formatar(total) + '*\n\n_Enviado via HomeVault_';
+  msg += '\n━━━━━━━━━━━━━━━━\n💰 *Total: ' + formatar(total) + '*\n\n_Enviado via MinhaCasa_';
   compartilharTexto(msg);
 }
 function abrirImpressao(titulo, corpo) {
@@ -748,7 +748,7 @@ function exportarPDFHistorico() {
     return '<tr class="dia"><td colspan="2">' + formatarData(d) + '</td><td class="v">' + formatar(porDia[d].reduce(function (s, l) { return s + l.valor; }, 0)) + '</td></tr>' +
       porDia[d].map(function (l) { return '<tr><td>' + esc(descLanc(l)) + '</td><td style="color:#6b7280">' + esc(NOME(l.cat) + (nomeSub(l.cat, l.sub) ? ' · ' + nomeSub(l.cat, l.sub) : '')) + '</td><td class="v" style="color:' + COR(l.cat) + '">' + formatar(l.valor) + '</td></tr>'; }).join('');
   }).join('');
-  abrirImpressao('HomeVault — Histórico', '<h1>📋 ' + esc(S.cfg.nome || 'HomeVault') + ' — Histórico</h1><div class="sub">' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + ' · ' + lista.length + ' lançamentos</div>' +
+  abrirImpressao('MinhaCasa — Histórico', '<h1>📋 ' + esc(S.cfg.nome || 'MinhaCasa') + ' — Histórico</h1><div class="sub">' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + ' · ' + lista.length + ' lançamentos</div>' +
     pills + '<table>' + linhas + '</table><div class="tot">Total: ' + formatar(total) + '</div>');
 }
 
@@ -846,7 +846,7 @@ function renderizarRelatorio() {
   $('rel-wa').onclick = function () {
     var msg = '📊 *RELATÓRIO — ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '*\n━━━━━━━━━━━━━━━━\n';
     todasCats().forEach(function (c) { var g = T.tots[c.id] || 0; if (g || +c.orc) msg += c.emoji + ' ' + c.nome + ': ' + formatar(g) + (+c.orc ? ' / ' + formatar(c.orc) : '') + '\n'; });
-    msg += '━━━━━━━━━━━━━━━━\n💰 *Total gasto: ' + formatar(grand) + '*\n✅ Disponível: ' + formatar(disp) + (lim ? ' (' + pctLim.toFixed(0) + '% usado)' : '') + '\n\n_Enviado via HomeVault_';
+    msg += '━━━━━━━━━━━━━━━━\n💰 *Total gasto: ' + formatar(grand) + '*\n✅ Disponível: ' + formatar(disp) + (lim ? ' (' + pctLim.toFixed(0) + '% usado)' : '') + '\n\n_Enviado via MinhaCasa_';
     compartilharTexto(msg);
   };
 }
@@ -908,11 +908,11 @@ function renderizarRelcat() {
   $('rc-wa').onclick = function () {
     var msg = c.emoji + ' *' + c.nome.toUpperCase() + '* — ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '\n━━━━━━━━━━━━━━━━\n';
     subKeys.forEach(function (k) { msg += '• ' + k + ': ' + formatar(subTots[k]) + '\n'; });
-    msg += '━━━━━━━━━━━━━━━━\n💰 *Total: ' + formatar(total) + '*' + (orc ? ' / orçado ' + formatar(orc) : '') + '\n\n_Enviado via HomeVault_';
+    msg += '━━━━━━━━━━━━━━━━\n💰 *Total: ' + formatar(total) + '*' + (orc ? ' / orçado ' + formatar(orc) : '') + '\n\n_Enviado via MinhaCasa_';
     compartilharTexto(msg);
   };
   $('rc-pdf').onclick = function () {
-    abrirImpressao('HomeVault — ' + c.nome, '<h1>' + esc(c.emoji + ' ' + c.nome) + '</h1><div class="sub">' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + ' · ' + lista.length + ' lançamentos</div>' +
+    abrirImpressao('MinhaCasa — ' + c.nome, '<h1>' + esc(c.emoji + ' ' + c.nome) + '</h1><div class="sub">' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + ' · ' + lista.length + ' lançamentos</div>' +
       '<table>' + subKeys.map(function (k) { return '<tr><td>' + esc(k) + '</td><td class="v">' + formatar(subTots[k]) + '</td></tr>'; }).join('') + '</table>' +
       '<h3 style="margin-top:20px">Lançamentos</h3><table>' + lista.map(function (l) { return '<tr><td>' + formatarData(l.data) + '</td><td>' + esc(descLanc(l)) + '</td><td class="v">' + formatar(l.valor) + '</td></tr>'; }).join('') + '</table>' +
       '<div class="tot">Total: ' + formatar(total) + (orc ? ' · Orçado: ' + formatar(orc) : '') + '</div>');
@@ -1195,7 +1195,7 @@ function renderizarSemana() {
     var msg = '📌 *' + (r.parcial ? 'SEMANA ATUAL (ATÉ ' + semFD(r.ate).toUpperCase() + ') ' : 'SEMANA ') + semFD(r.seg).toUpperCase() + ' – ' + semFD(r.dom).toUpperCase() + '*\n━━━━━━━━━━━━━━━━\n💰 Gasto: *' + m0(r.tot) + '*' + (r.alvoSem > 0 ? ' (alvo ' + m0(r.alvoSem) + ')' : '') + '\n📊 Seu normal: ' + m0(r.normalTot) + '\n';
     if (r.vaz.length) { msg += '\n🔻 *Onde mais vazou*\n'; r.vaz.forEach(function (x) { msg += '• ' + x.nome + ': ' + m0(x.sem) + ' (normal ' + m0(x.normal) + ', +' + m0(x.exc) + ')\n'; }); }
     msg += '\n✅ *O que fazer nesta semana*\n'; r.acoes.forEach(function (a, i) { msg += (i + 1) + '. ' + txt(a) + '\n'; });
-    compartilharTexto(msg + '\n_Enviado via HomeVault_');
+    compartilharTexto(msg + '\n_Enviado via MinhaCasa_');
   };
 }
 
@@ -1316,7 +1316,7 @@ function copiar(txt) {
   else mostrarToast('ℹ️', 'Toque e segure o código para copiar');
 }
 function compartilharConvite() {
-  var txt = '🏠 Te convidei para a nossa casa no HomeVault!\n\n1. Toque no link: ' + linkConvite() + '\n2. Crie sua conta (e-mail e senha)\n3. Digite a senha da casa, que vou te passar à parte';
+  var txt = '🏠 Te convidei para a nossa casa no MinhaCasa!\n\n1. Toque no link: ' + linkConvite() + '\n2. Crie sua conta (e-mail e senha)\n3. Digite a senha da casa, que vou te passar à parte';
   if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else copiar(txt);
 }
 function novoCodigo() {
@@ -1342,7 +1342,7 @@ function baixar(nome, tipo, conteudo) {
   setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 function exportarJSON() {
-  baixar('homevault-backup-' + hoje() + '.json', 'application/json', JSON.stringify({ app: 'HomeVault', formato: 2, exportado: new Date().toISOString(), config: S.cfg, lancamentos: S.raw }, null, 1));
+  baixar('minhacasa-backup-' + hoje() + '.json', 'application/json', JSON.stringify({ app: 'HomeVault', formato: 2, exportado: new Date().toISOString(), config: S.cfg, lancamentos: S.raw }, null, 1));
 }
 function exportarCSV() {
   var q = function (s) { return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"'; };
@@ -1356,7 +1356,7 @@ function importarJSON(arquivo) {
   var r = new FileReader();
   r.onload = function () {
     var d; try { d = JSON.parse(r.result); } catch (e) { mostrarToast('⚠️', 'Arquivo inválido'); return; }
-    if (!d || d.app !== 'HomeVault' || !d.lancamentos) { mostrarToast('⚠️', 'Não é um backup do HomeVault'); return; }
+    if (!d || d.app !== 'HomeVault' || !d.lancamentos) { mostrarToast('⚠️', 'Não é um backup do MinhaCasa'); return; }
     var regs = d.lancamentos;
     if (Array.isArray(regs)) { // formato 1
       var obj = {}; regs.forEach(function (l) { if (l && l.id && l.v) obj[l.id] = { v: l.v, dt: l.dt, c: l.c, s: l.s, d: l.d, por: l.por, ts: l.ts }; }); regs = obj;

@@ -1,6 +1,6 @@
 {
-  "name": "HomeVault",
-  "short_name": "HomeVault",
+  "name": "MinhaCasa",
+  "short_name": "MinhaCasa",
   "description": "Finanças da casa, privadas e criptografadas",
   "start_url": "./",
   "scope": "./",
