@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.10.0';
+var VERSAO = '2.10.1';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -58,15 +58,28 @@ function formatar(n) {
   int = int.replace(/\B(?=(\d{3})+(?!\d))/g, br ? '.' : ',');
   return (neg ? '-' : '') + SIMB[moeda()] + ' ' + int + (br ? ',' : '.') + dec;
 }
-// Aceita "12,50", "12.50", "1.234,56", "1,234.56" → número (2 casas)
+// Aceita "12,50", "12.50", "1.234,56", "1,234.56", "1.500", "R$ 7,5" → número (2 casas).
+// Recusa (NaN): negativo, letras, mais de 2 casas decimais, milhar mal formado e valores acima de 10 milhões (14/11/2026).
+var VALOR_MAX = 10000000;
 function lerValor(txt) {
-  var s = String(txt == null ? '' : txt).replace(/[^\d.,]/g, '');
-  if (!s) return NaN;
-  var dec = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
-  if (dec >= 0 && s.length - dec - 1 <= 2) s = s.slice(0, dec).replace(/[.,]/g, '') + '.' + s.slice(dec + 1);
-  else s = s.replace(/[.,]/g, '');
-  var n = parseFloat(s);
-  return isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+  var s = String(txt == null ? '' : txt).trim().replace(/^(CA\$|US\$|R\$|\$|€)\s*/i, '').replace(/\s+/g, '');
+  if (!s || /[^\d.,]/.test(s)) return NaN;
+  var ult = Math.max(s.lastIndexOf(','), s.lastIndexOf('.')), intp = s, decp = '';
+  var temDois = s.indexOf(',') >= 0 && s.indexOf('.') >= 0, sep = ult >= 0 ? s.charAt(ult) : '';
+  var nSep = sep ? s.split(sep).length - 1 : 0;
+  if (ult >= 0) {
+    var depois = s.slice(ult + 1);
+    if (temDois || (nSep === 1 && depois.length !== 3)) { intp = s.slice(0, ult); decp = depois; if (decp.length > 2 || !decp.length) return NaN; }
+    else { intp = s; decp = ''; }
+  }
+  var grupos = intp.split(/[.,]/);
+  if (grupos.length > 1) {
+    if (!/^\d{1,3}$/.test(grupos[0]) || /^0/.test(grupos[0])) return NaN;
+    for (var g = 1; g < grupos.length; g++) if (!/^\d{3}$/.test(grupos[g])) return NaN;
+  }
+  var n = parseFloat(grupos.join('') + (decp ? '.' + decp : ''));
+  if (!isFinite(n) || n > VALOR_MAX) return NaN;
+  return Math.round(n * 100) / 100;
 }
 function numTxt(v) { return v ? String(v).replace('.', moeda() === 'BRL' || moeda() === 'EUR' ? ',' : '.') : ''; }
 var _tmr = null;
@@ -638,7 +651,8 @@ function atualizarPreviewParcela() {
 }
 function salvarLancamento() {
   var a = S.add, valor = lerValor($('inp-valor').value), data = $('inp-data').value, desc = $('inp-desc').value.trim();
-  if (!(valor > 0)) { mostrarToast('⚠️', 'Informe o valor gasto'); return; }
+  if (!$('inp-valor').value.trim()) { mostrarToast('⚠️', 'Informe o valor gasto'); return; }
+  if (!(valor > 0)) { mostrarToast('⚠️', 'Valor inválido. Use, por exemplo, 12,50 ou 1.234,56 (até 10 milhões)'); return; }
   if (!data) { mostrarToast('⚠️', 'Selecione a data'); return; }
   if (!a.cat || !catPorId(a.cat)) { mostrarToast('⚠️', 'Escolha uma categoria'); return; }
   var cat = catPorId(a.cat);
