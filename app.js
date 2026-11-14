@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.11.0';
+var VERSAO = '2.12.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -348,7 +348,7 @@ function irPara(tela) {
   $('tela-' + tela).classList.add('ativa');
   S.tela = tela;
   document.body.classList.toggle('na-tela-add', tela === 'add');
-  var navMap = { categoria: 'relcat', semana: 'relatorio' };
+  var navMap = { categoria: 'relatorio', semana: 'relatorio', relcat: 'relatorio', projecao: 'relatorio' };
   if (tela === 'semana') { S.semOff = 0; S.semCic = 0; S.semAberta = false; }
   qsa('.nav button').forEach(function (b) { b.classList.remove('active'); });
   var nb = $('nb-' + (navMap[tela] || tela)); if (nb) nb.classList.add('active');
@@ -1714,15 +1714,8 @@ function abrirRelatorioCompleto() {
   w.document.close();
 }
 function ligarBotaoRelatorioCompleto() {
-  if ($('btn-rel-completo')) return;
-  var ancora = document.querySelector('#tela-relatorio .conteudo');
-  if (!ancora) return;
-  var b = document.createElement('button');
-  b.id = 'btn-rel-completo'; b.className = 'btn-restaurar'; b.type = 'button';
-  b.style.cssText = 'color:#1e3a8a;border-color:#bfdbfe;background:#eff6ff';
-  b.innerHTML = '📈 Relatório completo — onde o orçamento está quebrando (ciclos, PDF) ›';
-  b.onclick = abrirRelatorioCompleto;
-  ancora.insertBefore(b, ancora.firstChild);
+  // o atalho agora faz parte da central de Relatórios (index.html)
+  if ($('btn-rel-completo')) $('btn-rel-completo').onclick = abrirRelatorioCompleto;
 }
 
 // ═════════════════════════ AJUSTES ═════════════════════════
