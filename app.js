@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.18.0';
+var VERSAO = '2.19.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -2019,7 +2019,7 @@ function mostrarAdmin() {
   $('adm-copiar').onclick = function () { if (_adm.codigo) copiar(_adm.codigo); };
   $('adm-compart').onclick = function () {
     if (!_adm.codigo) return;
-    var txt = '🏠 Você foi convidado para testar o Minha Casa!\n\n1. Abra: https://www.minhacasaapp.com\n2. Crie sua conta (e-mail e senha)\n3. Em "Criar casa", use o código de acesso: ' + _adm.codigo;
+    var txt = '🏠 Você foi convidado para testar o Minha Casa!\n\n1. Abra: ' + location.origin + '\n2. Crie sua conta (e-mail e senha)\n3. Em "Criar casa", use o código de acesso: ' + _adm.codigo;
     if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else copiar(txt);
   };
   var bn = $('adm-novo');
