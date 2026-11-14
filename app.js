@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.10.1';
+var VERSAO = '2.10.2';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -433,7 +433,7 @@ function renderizarBarras(lista, p) {
   var melhorDia = '', melhorVal = 0;
   dias.forEach(function (d) { if ((porDia[d] || {}).total > melhorVal) { melhorVal = porDia[d].total; melhorDia = d; } });
   var stats = '<div class="chart-stats">' +
-    '<div class="chart-stat"><div class="chart-stat-val">' + fmtY(media) + '</div><div class="chart-stat-label">Média/dia</div></div>' +
+    '<div class="chart-stat"><div class="chart-stat-val">' + fmtY(media) + '</div><div class="chart-stat-label">Média por dia c/ gasto</div></div>' +
     '<div class="chart-stat"><div class="chart-stat-val">' + diasCom.length + '</div><div class="chart-stat-label">Dias c/ gasto</div></div>' +
     '<div class="chart-stat"><div class="chart-stat-val">' + (melhorDia ? (+melhorDia.slice(8, 10)) + '/' + (+melhorDia.slice(5, 7)) : '—') + '</div><div class="chart-stat-label">Maior gasto</div></div></div>';
   var CHART_H = 160, barW = Math.max(12, Math.floor((300 - 38 - 3 * dias.length) / dias.length));
@@ -801,7 +801,11 @@ function renderizarRelatorio() {
   var maiorDia = '', maiorVal = 0;
   dias.forEach(function (d) { if (T.porDia[d] > maiorVal) { maiorVal = T.porDia[d]; maiorDia = d; } });
   var diasPeriodo = diasEntre(per.inicio, per.fim) + 1;
-  var projecao = diasCom ? (grand / diasCom) * diasPeriodo : 0;
+  // mesma conta da tela Projeção: média por dia corrido × dias do período (14/11/2026)
+  var hjR = hoje(), passadosR = hjR < per.inicio ? 0 : Math.min(diasPeriodo, diasEntre(per.inicio, hjR) + 1);
+  var mediaCorrida = passadosR ? grand / passadosR : 0;
+  var projecao = hjR > per.fim ? grand : mediaCorrida * diasPeriodo;
+  mediaDia = hjR > per.fim ? grand / diasPeriodo : mediaCorrida;
   var corLim = pctLim > 100 ? '#f44336' : pctLim >= 80 ? '#ff9800' : '#1565c0';
   var excede = projecao > 0 && lim > 0 && projecao > lim, dentro = projecao > 0 && lim > 0 && !excede;
   var met = '<div class="rel-metricas">' +
@@ -809,7 +813,7 @@ function renderizarRelatorio() {
     '<div class="rel-met-card"><div class="rel-met-val" style="color:' + (disp < 0 ? '#f44336' : '#43a047') + '">' + formatar(disp) + '</div><div class="rel-met-lbl">Disponível</div><div class="rel-met-sub">Limite: ' + formatar(lim) + '</div></div>' +
     '<div class="rel-met-card"><div class="rel-met-val" style="color:' + corLim + '">' + pctLim.toFixed(1) + '%</div><div class="rel-met-lbl">% do Limite</div><div class="rel-met-sub">' + T.nComuns + ' lançamentos</div></div>' +
     '<div class="rel-met-card" style="background:' + (excede ? '#fef2f2' : dentro ? '#f0fdf4' : 'white') + ';border:' + (excede ? '2px solid #ef4444' : dentro ? '2px solid #22c55e' : 'none') + '">' +
-    '<div class="rel-met-val" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#555') + '">' + formatar(mediaDia) + '</div><div class="rel-met-lbl">Média / dia</div>' +
+    '<div class="rel-met-val" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#555') + '">' + formatar(mediaDia) + '</div><div class="rel-met-lbl">Média por dia</div>' +
     '<div class="rel-met-sub" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#9ca3af') + ';font-weight:700">Projeção: ' + formatar(projecao) + '</div></div>' +
     (maiorDia ? '<div class="rel-met-card" style="grid-column:1/-1"><div class="rel-met-val" style="color:#e53935;font-size:15px">' + formatar(maiorVal) + '</div><div class="rel-met-lbl">Maior gasto — ' + formatarData(maiorDia) + '</div></div>' : '') +
     '</div>';
@@ -1100,10 +1104,12 @@ function semFD(s) { var d = dataObj(s); return d.getDate() + ' ' + MESC[d.getMon
 function m0(n) { return formatar(Math.round(+n || 0)).replace(/[.,]00$/, ''); }
 function semSub(l) { return nomeSub(l.cat, l.sub) || (l.desc ? String(l.desc).trim() : '') || NOME(l.cat) + ' sem tipo'; }
 function semOutros(nome) { return /^outros?$|^outras( despesas)?$|sem (tipo|categoria)$/i.test(String(nome).trim()); }
+// fim do ciclo k: período que termina no último dia do mês continua terminando no último dia
+function fimCicloK(fim, k) { var d1 = semAdd(fim, 1); return d1.slice(8) === '01' ? semAdd(addMeses(d1, k), -1) : addMeses(fim, k); }
 function cicloDe(per, h) {
-  var k = 0; while (h > addMeses(per.fim, k) && k < 36) k++;
+  var k = 0; while (h > fimCicloK(per.fim, k) && k < 36) k++;
   while (h < addMeses(per.inicio, k) && k > -36) k--;
-  return { inicio: addMeses(per.inicio, k), fim: addMeses(per.fim, k) };
+  return { inicio: addMeses(per.inicio, k), fim: fimCicloK(per.fim, k) };
 }
 function analisarSemana(hojeRef, parcial) {
   var hj = parcial ? hoje() : (hojeRef || hoje());
@@ -1376,7 +1382,8 @@ function motorRelatorio(D) {
 
   var PER = { n: 3 };
   try { var _p = JSON.parse(localStorage.getItem('mc.relper') || 'null'); if (_p && (_p.n || (_p.de && _p.ate))) PER = _p; } catch (e) {}
-  function idxAtual(p, h) { var k = 0; while (h > addMeses(p.fim, k) && k < 36) k++; while (h < addMeses(p.inicio, k) && k > -36) k--; return k; }
+  function fimK(fim, k) { var d1 = addDias(fim, 1); return d1.slice(8) === '01' ? addDias(addMeses(d1, k), -1) : addMeses(fim, k); }
+  function idxAtual(p, h) { var k = 0; while (h > fimK(p.fim, k) && k < 36) k++; while (h < addMeses(p.inicio, k) && k > -36) k--; return k; }
   function prepara(c, h) {
     c.dias = dias(c.inicio, c.fim);
     c.emCurso = h >= c.inicio && h <= c.fim && c.fimCheio >= h;
@@ -1386,7 +1393,7 @@ function motorRelatorio(D) {
     c.rot = fD(c.inicio) + ' – ' + fD(c.fim);
     return c;
   }
-  function cicloK(p, k) { var a = addMeses(p.inicio, k), b = addMeses(p.fim, k); return { inicio: a, fim: b, fimCheio: b, cheio: dias(a, b) }; }
+  function cicloK(p, k) { var a = addMeses(p.inicio, k), b = fimK(p.fim, k); return { inicio: a, fim: b, fimCheio: b, cheio: dias(a, b) }; }
   function cicloAtual() { var h = hojeIso(); return prepara(cicloK(d.periodo, idxAtual(d.periodo, h)), h); }
   function ciclos() {
     var p = d.periodo, h = hojeIso(), k = idxAtual(p, h), out = [];
