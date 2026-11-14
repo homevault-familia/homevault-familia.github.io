@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.9.1';
+var VERSAO = '2.9.2';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -326,6 +326,7 @@ function renderLogo() { clearTimeout(_rt); _rt = setTimeout(renderTela, 60); }
 // ═════════════════════════ INÍCIO ═════════════════════════
 function renderizar() {
   var c = S.cfg, p = c.periodo, T = totaisPeriodo(p);
+  renderAvisoPeriodo();
   var hj = hoje();
   var totalHoje = T.todos.filter(function (l) { return l.data === hj; }).reduce(function (s, l) { return s + l.valor; }, 0);
   $('txt-casa').textContent = '🏠 ' + (c.nome || 'MinhaCasa');
@@ -500,15 +501,30 @@ function toggleConfig() {
   tg.classList.toggle('aberto', abrir);
   if (abrir) preencherConfig();
 }
-// Avança o período automaticamente quando ele termina (mesma duração, meses seguintes)
-function verificarAvancoPeriodo() {
-  var c = S.cfg, hj = hoje();
-  if (!c.periodo || hj <= c.periodo.fim) return;
-  var meses = 0, it = 60;
-  while (hj > addMeses(c.periodo.fim, meses) && it-- > 0) meses++;
-  c.periodo = { inicio: addMeses(c.periodo.inicio, meses), fim: addMeses(c.periodo.fim, meses) };
-  salvarCfg();
-  mostrarToast('📅', 'Período avançado: ' + formatarData(c.periodo.inicio) + ' → ' + formatarData(c.periodo.fim));
+// O período NÃO vira sozinho (pedido em 13/11/2026): quando ele termina, o Início mostra um aviso
+// e o usuário define o novo período em Configurações. O botão já sugere as datas, mas só grava ao salvar.
+function sugestaoProxPeriodo() {
+  var p = S.cfg.periodo, ini = semAdd(p.fim, 1);
+  return { inicio: ini, fim: semAdd(addMeses(ini, 1), -1) };
+}
+function renderAvisoPeriodo() {
+  var wrap = $('sem-card-wrap'); if (!wrap || !S.cfg || !S.cfg.periodo) return;
+  var el = $('aviso-periodo');
+  if (!el) { el = document.createElement('div'); el.id = 'aviso-periodo'; wrap.parentNode.insertBefore(el, wrap); }
+  var p = S.cfg.periodo;
+  if (hoje() <= p.fim) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="card" style="border-left:5px solid #f59e0b;background:#fffbeb">' +
+    '<div style="font-size:15px;font-weight:800;color:#92400e">📅 O período terminou</div>' +
+    '<div style="font-size:13.5px;color:#78350f;margin-top:4px;line-height:1.45">O período <b>' + formatarData(p.inicio) + ' → ' + formatarData(p.fim) + '</b> acabou. ' +
+    'Os gastos lançados depois de ' + formatarData(p.fim) + ' só entram nos totais quando você definir o novo período.</div>' +
+    '<button type="button" id="btn-novo-periodo" style="margin-top:10px;width:100%;padding:12px;border:0;border-radius:12px;background:#d97706;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Definir novo período</button></div>';
+  $('btn-novo-periodo').onclick = function () {
+    if ($('topo-config').style.display !== 'block') toggleConfig();
+    var sug = sugestaoProxPeriodo();
+    $('inp-inicio').value = sug.inicio; $('inp-fim').value = sug.fim;
+    mostrarToast('📅', 'Confira as datas sugeridas e toque em Salvar');
+    var alvo = $('inp-inicio'); if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 }
 
 // ═════════════════════════ DETALHE CATEGORIA ═════════════════════════
@@ -1909,7 +1925,7 @@ function escutar() {
       var n = normalizarCfg(c || { cats: catsPadrao(), nome: 'Minha casa', moeda: 'CAD' });
       S.cfg = n.cfg;
       if (n.mudou || !c) salvarCfg();
-      if (primeiro) { primeiro = false; verificarAvancoPeriodo(); irPara('inicio'); }
+      if (primeiro) { primeiro = false; irPara('inicio'); }
       else renderLogo();
     });
   }, negado);
