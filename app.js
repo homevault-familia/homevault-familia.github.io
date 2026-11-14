@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.7.0';
+var VERSAO = '2.9.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -300,7 +300,7 @@ function irPara(tela) {
   $('tela-' + tela).classList.add('ativa');
   S.tela = tela;
   var navMap = { categoria: 'relcat', semana: 'relatorio' };
-  if (tela === 'semana') S.semOff = 0;
+  if (tela === 'semana') { S.semOff = 0; S.semCic = 0; S.semAberta = false; }
   qsa('.nav button').forEach(function (b) { b.classList.remove('active'); });
   var nb = $('nb-' + (navMap[tela] || tela)); if (nb) nb.classList.add('active');
   if (tela === 'add' && !S.add.editId) novoLancamento();
@@ -1152,16 +1152,82 @@ function pintarCartaoSemana() {
     '<button type="button" data-ir="semana" style="margin-top:8px;font-size:13px;font-weight:700;color:#1d4ed8;background:none;border:0;padding:0;cursor:pointer;font-family:inherit">Ver todas as ações ›</button></div>';
   $('sem-fechar').onclick = function () { try { localStorage.setItem(chaveSemFechado(), r.seg); } catch (e) {} wrap.innerHTML = ''; };
 }
+// Período (ciclo) com as semanas dentro dele; tocar numa semana abre o relatório dela (14/11/2026)
+function segundaDe(s) { var w = dataObj(s).getDay(); return semAdd(s, -((w + 6) % 7)); }
+function cicloSemana(k) {
+  var per = (S.cfg && S.cfg.periodo) || periodoMesAtual(), c = cicloDe(per, hoje());
+  var fim = addMeses(c.fim, k);
+  // período que termina no último dia do mês continua terminando no último dia (30 nov → 31 out, e não 30 out)
+  if (semAdd(c.fim, 1).slice(8) === '01') fim = semAdd(addMeses(semAdd(c.fim, 1), k), -1);
+  return { inicio: addMeses(c.inicio, k), fim: fim };
+}
+function offDaSemana(seg) { return Math.round(diasEntre(seg, segundaDe(hoje())) / 7) - 1; }
+function semanasDoCiclo(c) {
+  var out = [], hj = hoje(), seg0 = segundaDe(hoje());
+  for (var seg = segundaDe(c.inicio); seg <= c.fim; seg = semAdd(seg, 7)) {
+    var off = offDaSemana(seg), fut = seg > seg0, r = null;
+    if (!fut) { try { r = off < 0 ? analisarSemana(hj, true) : analisarSemana(semAdd(seg, 7)); } catch (e) {} }
+    out.push({ seg: seg, dom: semAdd(seg, 6), off: off, futura: fut, atual: off === -1, r: r });
+  }
+  return out;
+}
+function renderizarListaSemanas() {
+  var k = S.semCic || 0, c = cicloSemana(k), hj = hoje();
+  $('sem-label').textContent = 'Período ' + semFD(c.inicio) + ' – ' + semFD(c.fim) + ' ' + c.fim.slice(0, 4);
+  $('sem-prox').style.visibility = k < 0 ? 'visible' : 'hidden';
+  $('sem-prox').title = '';
+  var sem = semanasDoCiclo(c);
+  var ate = hj < c.fim ? hj : c.fim;
+  var gasto = lancamentos().filter(function (l) { return l.data && !l.parcela && l.cat !== PARC && l.data >= c.inicio && l.data <= ate; })
+    .reduce(function (s2, l) { return s2 + l.valor; }, 0);
+  var lim = baseDisponivel(), pctL = lim > 0 ? gasto / lim * 100 : 0, corL = pctL > 100 ? '#dc2626' : pctL >= 80 ? '#b26b00' : '#16a34a';
+  var diasC = semND(c.inicio, c.fim), decor = hj < c.inicio ? 0 : Math.min(diasC, semND(c.inicio, ate));
+  var topo = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:2px 2px 6px">' +
+    '<div><div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">Gasto no período</div>' +
+    '<div style="font-size:22px;font-weight:900;color:' + corL + '">' + m0(gasto) + (lim > 0 ? ' <span style="font-size:13px;font-weight:600;color:#9ca3af">de ' + m0(lim) + '</span>' : '') + '</div></div>' +
+    '<div style="text-align:right;font-size:12px;color:#6b7280">' + (k < 0 ? 'período fechado' : 'dia ' + decor + ' de ' + diasC) + (lim > 0 ? '<br><b style="color:' + corL + '">' + pctL.toFixed(0) + '% do limite</b>' : '') + '</div></div>' +
+    (lim > 0 ? '<div class="orc-barra-fundo" style="margin:0 2px 12px"><div class="orc-barra-fill" style="width:' + Math.min(pctL, 100).toFixed(1) + '%;background:' + corL + '"></div></div>' : '');
+  var linhas = sem.map(function (x, i) {
+    var sel = S.semAberta && !x.futura && x.off === S.semOff, st = x.r && x.r.n ? statusSemana(x.r) : null, cor = st ? corStatus(st) : '#d1d5db';
+    var dir = x.futura ? '<span style="color:#9ca3af;font-size:12px">ainda não começou</span>'
+      : !x.r || !x.r.n ? '<span style="color:#9ca3af;font-size:12px">sem gastos</span>'
+      : '<b style="color:' + cor + ';font-size:15px">' + m0(x.r.tot) + '</b>' + (x.r.alvoSem > 0 ? '<div style="font-size:11px;color:#9ca3af">alvo ' + m0(x.r.alvoSem) + '</div>' : '');
+    return '<button type="button" class="sem-item' + (sel ? ' sel' : '') + '" data-semoff="' + x.off + '"' + (x.futura ? ' disabled' : '') +
+      ' style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;padding:10px 12px;margin:0 0 6px;border-radius:12px;cursor:' + (x.futura ? 'default' : 'pointer') + ';' +
+      'border:' + (sel ? '2px solid #7c3aed' : '1px solid #e5e7eb') + ';background:' + (sel ? '#f5f3ff' : x.futura ? '#f9fafb' : '#fff') + ';opacity:' + (x.futura ? '.6' : '1') + '">' +
+      '<span style="width:6px;align-self:stretch;border-radius:3px;background:' + cor + '"></span>' +
+      '<span style="flex:1;min-width:0"><b style="font-size:14px;color:#111827">Semana ' + (i + 1) + '</b>' + (x.atual ? ' <span style="font-size:10.5px;font-weight:800;color:#7c3aed;background:#ede9fe;border-radius:6px;padding:2px 6px;vertical-align:1px">EM ANDAMENTO</span>' : '') +
+      '<div style="font-size:12px;color:#6b7280">' + semFD(x.seg) + ' – ' + semFD(x.dom) + '</div></span>' +
+      '<span style="text-align:right">' + dir + '</span>' + (x.futura ? '' : '<span style="color:' + (sel ? '#7c3aed' : '#9ca3af') + ';font-size:18px;display:inline-block;transform:rotate(' + (sel ? '90' : '0') + 'deg)">›</span>') + '</button>';
+  }).join('');
+  var el = $('sem-semanas'), corpo = $('corpo-semana');
+  if (!el) { el = document.createElement('div'); el.id = 'sem-semanas'; corpo.parentNode.insertBefore(el, corpo); }
+  // o relatório da semana fica dentro da lista, logo abaixo da semana aberta; antes de redesenhar, ele volta para fora
+  if (el.contains && el.contains(corpo)) el.parentNode.insertBefore(corpo, el.nextSibling);
+  el.innerHTML = '<div class="card" style="padding:12px 12px 6px">' + topo +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:0 2px 8px">Semanas do período · toque para abrir ou fechar</div>' + linhas +
+    '<div style="font-size:11px;color:#9ca3af;margin:2px 2px 6px">Semanas de segunda a domingo. A cor compara o gasto com o alvo semanal: verde abaixo, amarelo perto, vermelho acima.</div></div>';
+  qsa('#sem-semanas .sem-item').forEach(function (b) {
+    if (b.disabled) return;
+    if (S.semAberta && b.classList.contains('sel')) b.parentNode.insertBefore(corpo, b.nextSibling);
+    b.onclick = function () {
+      var off = +b.dataset.semoff;
+      if (S.semAberta && S.semOff === off) S.semAberta = false; else { S.semOff = off; S.semAberta = true; }
+      renderizarSemana();
+      var alvo = qsa('#sem-semanas .sem-item.sel')[0];
+      if (alvo && alvo.scrollIntoView) setTimeout(function () { alvo.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    };
+  });
+}
 function renderizarSemana() {
+  renderizarListaSemanas();
+  if (!S.semAberta) { $('corpo-semana').innerHTML = ''; return; }
   var off = S.semOff || 0, atual = off < 0;
   var hjRef = atual ? hoje() : semAdd(hoje(), -7 * off);
   var r = null; try { r = analisarSemana(hjRef, atual); } catch (e) { console.warn('semana:', e && e.message); }
   var w = dataObj(hjRef).getDay(), seg = semAdd(hjRef, -((w + 6) % 7) - (atual ? 0 : 7));
-  $('sem-label').textContent = (atual ? 'Semana atual · ' : 'Semana ') + semFD(seg) + ' – ' + semFD(semAdd(seg, 6));
-  $('sem-prox').style.visibility = off > -1 ? 'visible' : 'hidden';
-  $('sem-prox').title = off === 0 ? 'Ver a semana atual (parcial)' : '';
   var el = $('corpo-semana');
-  var dica = off === 0 ? '<div style="font-size:12px;color:#6b7280;text-align:center;margin:-2px 0 10px">Esta é a última semana fechada. Toque em <b>›</b> para ver a semana atual, até hoje.</div>' : '';
+  var dica = '';
   if (!r || !r.n) { el.innerHTML = dica + '<div class="vazio">📭 Nenhum gasto ' + (atual ? 'nesta semana até agora' : 'nesta semana') + '.<br><span style="font-size:12px">' + (atual ? 'Os lançamentos de segunda até hoje aparecem aqui.' : 'Esta tela mostra a semana fechada (segunda a domingo).') + '</span></div>'; return; }
   var st = statusSemana(r), cor = corStatus(st);
   var ref = r.alvoSem > 0 ? (r.parcial ? 'Alvo até hoje pelo limite: <b>' : 'Alvo da semana pelo limite: <b>') + m0(r.alvoSem) + '</b>' : 'Sem limite definido (defina em Início → ⚙️ Config)';
@@ -2053,8 +2119,8 @@ function ligarEventos() {
   $('hist-mes-prox').onclick = function () { S.mesHist = addMeses(S.mesHist + '-01', 1).slice(0, 7); renderizarHistorico(); };
   ['hist', 'rel', 'relcat', 'proj'].forEach(function (q) { [q + '-ini', q + '-fim'].forEach(function (id) { $(id).onchange = renderTela; }); });
   $('hist-wa').onclick = compartilharHistorico;
-  $('sem-ant').onclick = function () { S.semOff = (S.semOff || 0) + 1; renderizarSemana(); };
-  $('sem-prox').onclick = function () { S.semOff = Math.max(-1, (S.semOff || 0) - 1); renderizarSemana(); };
+  $('sem-ant').onclick = function () { S.semCic = (S.semCic || 0) - 1; S.semAberta = false; renderizarSemana(); };
+  $('sem-prox').onclick = function () { S.semCic = Math.min(0, (S.semCic || 0) + 1); S.semAberta = false; renderizarSemana(); };
   $('hist-pdf').onclick = exportarPDFHistorico;
 
   // Ajustes
