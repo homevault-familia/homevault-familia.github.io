@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="app-version" content="2.14.0">
+<meta name="app-version" content="2.15.0">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -874,24 +874,42 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
   .hv-sheet-box { border-radius: 22px; }
   .rel-hub { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* ── Rodada 3e: marca + ícones ── */
+.ic { width: 1.15em; height: 1.15em; vertical-align: -.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.brand-logo { width: 68px; height: 68px; display: inline-block; border-radius: 16px; box-shadow: 0 6px 18px rgba(15,23,42,.18); }
+#app-loading .ld-icon .brand-logo { width: 64px; height: 64px; }
+.login-logo { font-size: 0; margin-bottom: 10px; }
+.topo-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.topo-title #txt-casa { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topo-logo { width: 26px; height: 26px; border-radius: 7px; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
+.topo-config-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; }
+.btn-acao-icon .ic { width: 26px; height: 26px; }
+.add-hdr-icon .ic { width: 28px; height: 28px; }
+.btn-salvar-pro, #hist-pdf, #btn-excluir-edit { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.aj-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.rel-tile b { display: flex; align-items: center; gap: 7px; }
+.rel-tile b .ic { color: #1d4ed8; }
+.lanc-edit, .lanc-del { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; color: #9ca3af; font-size: 17px; }
+.lanc-edit:active, .lanc-del:active { background: #f3f4f6; }
 </style>
 </head>
 <body>
 
-<div id="app-loading"><div class="ld-icon">🏠</div><div class="ld-txt" id="ld-txt">Carregando…</div></div>
+<div id="app-loading"><div class="ld-icon"><img src="icon.svg" alt="" class="brand-logo"></div><div class="ld-txt" id="ld-txt">Carregando…</div></div>
 
 <!-- ════════ ENTRADA: login, casa, desbloqueio ════════ -->
 <div id="tela-login">
   <!-- Configuração pendente -->
   <div class="login-card" id="card-semconfig" style="display:none">
-    <div class="login-logo">🏠</div>
+    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
     <div class="login-title">MinhaCasa</div>
     <div class="login-sub">Configuração pendente: preencha o arquivo config.js com os dados do Firebase (veja o README).</div>
   </div>
 
   <!-- Login / cadastro -->
   <div class="login-card" id="card-auth" style="display:none">
-    <div class="login-logo">🏠</div>
+    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
     <div class="login-title">MinhaCasa</div>
     <div class="login-sub">Finanças da casa, privadas e criptografadas</div>
     <div class="hv-tabs"><button id="tab-entrar" class="on">Entrar</button><button id="tab-criar">Criar conta</button></div>
@@ -914,7 +932,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
   <!-- Criar casa / convite -->
   <div class="login-card" id="card-casa" style="display:none">
-    <div class="login-logo">🏡</div>
+    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
     <div class="login-title">Sua casa</div>
     <div class="login-sub">A "casa" guarda os lançamentos. Quem mora junto usa a mesma casa e a mesma senha da casa.</div>
     <div class="hv-tabs"><button id="tab-nova" class="on">Criar casa</button><button id="tab-convite">Tenho convite</button></div>
@@ -941,7 +959,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
   <!-- Desbloquear -->
   <div class="login-card" id="card-unlock" style="display:none">
-    <div class="login-logo">🔒</div>
+    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
     <div class="login-title">Desbloquear</div>
     <div class="login-sub">Digite a senha da casa para abrir os dados neste aparelho.</div>
     <div class="login-campo"><label for="ul-senha">Senha da casa</label><input id="ul-senha" type="password" autocomplete="off"></div>
@@ -959,13 +977,13 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 <div class="tela" id="tela-inicio">
   <div class="topo">
     <div class="topo-bar">
-      <div class="topo-title" id="txt-casa">🏠 MinhaCasa</div>
+      <div class="topo-title"><img src="icon.svg" alt="" class="topo-logo"><span id="txt-casa">MinhaCasa</span></div>
       <div class="topo-bar-right">
         <div id="sync-status" style="font-size:11px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px">
           <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block"></span>
           <span id="sync-txt">...</span>
         </div>
-        <button class="topo-config-btn" id="btn-config-top">⚙️ Config</button>
+        <button class="topo-config-btn" id="btn-config-top" aria-label="Período e orçamento"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Orçamento</button>
       </div>
     </div>
     <div class="topo-hero">
@@ -987,7 +1005,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
         </div>
       </div>
     </div>
-    <button class="topo-cfg-toggle" id="cfg-toggle">⚙️ Configurações <span class="cfg-arrow">▼</span></button>
+    <button class="topo-cfg-toggle" id="cfg-toggle">Período e orçamento <span class="cfg-arrow">▼</span></button>
     <div class="topo-config" id="topo-config">
       <div class="cfg-row">
         <div class="campo-topo" style="flex:1"><label>Valor para gastar no período</label><input type="text" id="inp-limite" placeholder="Ex: 2500" inputmode="decimal"></div>
@@ -1013,11 +1031,11 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
     <div id="sem-card-wrap"></div>
     <div class="acao-grid">
       <button class="btn-acao btn-acao-registrar" data-ir="add">
-        <div class="btn-acao-icon">➕</div>
+        <div class="btn-acao-icon"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
         <div><div class="btn-acao-text">Registrar</div><div class="btn-acao-sub">Novo gasto</div></div>
       </button>
       <button class="btn-acao btn-acao-foto" data-ir="semana" style="background:#7c3aed">
-        <div class="btn-acao-icon">📌</div>
+        <div class="btn-acao-icon"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
         <div><div class="btn-acao-text">Semana</div><div class="btn-acao-sub">Desvios e ações</div></div>
       </button>
     </div>
@@ -1032,7 +1050,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 <div class="tela" id="tela-add">
   <div class="add-header" id="add-header">
     <div class="add-hdr-left">
-      <div class="add-hdr-icon" id="add-hdr-icon">➕</div>
+      <div class="add-hdr-icon" id="add-hdr-icon"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
       <div><div class="add-hdr-title" id="add-hdr-title">Registrar Gasto</div><div class="add-hdr-sub" id="add-hdr-sub">Selecione a categoria</div></div>
     </div>
     <button class="btn-voltar" data-ir="inicio">✕</button>
@@ -1069,10 +1087,10 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <textarea id="inp-desc" class="add-textarea" maxlength="140" placeholder="Ex: Gasolina no posto, compras da semana…"></textarea>
     </div>
     <div id="add-edit-extra" style="display:none;text-align:center">
-      <button class="aj-btn perigo" id="btn-excluir-edit" style="padding:12px 20px">🗑️ Excluir lançamento</button>
+      <button class="aj-btn perigo" id="btn-excluir-edit" style="padding:12px 20px"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>Excluir lançamento</button>
     </div>
   </div>
-  <div class="add-sticky-footer"><button class="btn-salvar-pro" id="btn-salvar-pro">💾 Salvar Lançamento</button></div>
+  <div class="add-sticky-footer"><button class="btn-salvar-pro" id="btn-salvar-pro"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Salvar lançamento</button></div>
 </div>
 
 <!-- ════════ DETALHE CATEGORIA ════════ -->
@@ -1083,7 +1101,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
 <!-- ════════ HISTÓRICO ════════ -->
 <div class="tela" id="tela-historico">
-  <div class="topo-add"><h2>📋 Histórico</h2></div>
+  <div class="topo-add"><h2>Histórico</h2></div>
   <div class="conteudo">
     <div class="card" style="padding:10px 14px">
       <div class="rel-periodo-btns" style="margin-bottom:0" data-per="hist">
@@ -1100,7 +1118,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       </div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn-whatsapp" id="hist-wa" style="flex:1;margin-top:0;padding:10px;font-size:16px">📱 WhatsApp</button>
-        <button id="hist-pdf" style="flex:1;padding:10px;background:#1d4ed8;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">📄 PDF</button>
+        <button id="hist-pdf" style="flex:1;padding:10px;background:#1d4ed8;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>PDF</button>
       </div>
     </div>
     <div id="hist-total" style="display:none"></div>
@@ -1110,13 +1128,13 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
 <!-- ════════ RELATÓRIO ════════ -->
 <div class="tela" id="tela-relatorio">
-  <div class="topo-add"><h2>📊 Relatórios</h2></div>
+  <div class="topo-add"><h2>Relatórios</h2></div>
   <div class="conteudo">
     <div class="rel-hub">
-      <button type="button" class="rel-tile" data-ir="semana"><b>📌 Semanal</b><span>Onde vazou e o que fazer</span></button>
-      <button type="button" class="rel-tile" data-ir="relcat"><b>📂 Por categoria</b><span>Gasto e orçamento de cada uma</span></button>
-      <button type="button" class="rel-tile" data-ir="projecao"><b>📈 Projeção</b><span>Como o período vai fechar</span></button>
-      <button type="button" class="rel-tile" id="btn-rel-completo"><b>🧭 Completo</b><span>Vários ciclos, filtros e PDF</span></button>
+      <button type="button" class="rel-tile" data-ir="semana"><b><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Semanal</b><span>Onde vazou e o que fazer</span></button>
+      <button type="button" class="rel-tile" data-ir="relcat"><b><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M21 12a9 9 0 0 0-9-9"/></svg>Por categoria</b><span>Gasto e orçamento de cada uma</span></button>
+      <button type="button" class="rel-tile" data-ir="projecao"><b><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Projeção</b><span>Como o período vai fechar</span></button>
+      <button type="button" class="rel-tile" id="btn-rel-completo"><b><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Completo</b><span>Vários ciclos, filtros e PDF</span></button>
     </div>
     <div class="rel-sec-tit">Resumo do período</div>
     <div class="card rel-periodo-card">
@@ -1139,7 +1157,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
 <!-- ════════ POR CATEGORIA ════════ -->
 <div class="tela" id="tela-relcat">
-  <div class="topo-add"><h2>📂 Por categoria</h2><button class="btn-voltar" data-ir="relatorio" aria-label="Voltar para Relatórios">‹</button></div>
+  <div class="topo-add"><h2>Por categoria</h2><button class="btn-voltar" data-ir="relatorio" aria-label="Voltar para Relatórios">‹</button></div>
   <div class="conteudo">
     <div class="relcat-tabs" id="relcat-tabs"></div>
     <div class="card rel-periodo-card" id="relcat-per-card">
@@ -1179,7 +1197,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
         </div>
       </div>
     </div>
-    <div id="proj-sem-limite" class="card" style="display:none;text-align:center;color:#6b7280;font-size:14px">Defina o <b>valor para gastar no período</b> em Início → ⚙️ Config para ver a projeção.</div>
+    <div id="proj-sem-limite" class="card" style="display:none;text-align:center;color:#6b7280;font-size:14px">Defina o <b>valor para gastar no período</b> em Início → <b>Orçamento</b> para ver a projeção.</div>
     <div id="proj-conteudo">
     <div class="proj-card" style="margin-top:0">
       <div class="proj-metrics">
@@ -1215,7 +1233,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
 <!-- ════════ RELATÓRIO SEMANAL ════════ -->
 <div class="tela" id="tela-semana">
-  <div class="topo-add" style="background:linear-gradient(150deg,#3b0764,#7c3aed)"><h2>📌 Relatório semanal</h2><button class="btn-voltar" data-ir="relatorio" aria-label="Voltar para Relatórios">‹</button></div>
+  <div class="topo-add" style="background:linear-gradient(150deg,#3b0764,#7c3aed)"><h2>Relatório semanal</h2><button class="btn-voltar" data-ir="relatorio" aria-label="Voltar para Relatórios">‹</button></div>
   <div class="conteudo">
     <div class="card" style="padding:10px 14px">
       <div class="nav-mes" style="padding:2px 0"><button id="sem-ant">‹</button><span id="sem-label" style="min-width:170px">—</span><button id="sem-prox">›</button></div>
@@ -1226,7 +1244,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
 <!-- ════════ AJUSTES ════════ -->
 <div class="tela" id="tela-ajustes">
-  <div class="topo-add"><h2>⚙️ Ajustes</h2></div>
+  <div class="topo-add"><h2>Ajustes</h2></div>
   <div class="conteudo">
     <div class="aj-sec">Casa</div>
     <div class="card">
@@ -1254,15 +1272,15 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
     <div class="aj-sec">Backup</div>
     <div class="card">
       <div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">O arquivo de backup sai <b>sem criptografia</b>. Guarde em lugar seguro.</div>
-      <div style="display:flex;gap:8px"><button class="aj-btn" style="flex:1" id="aj-exp-json">☁️ Backup (JSON)</button><button class="aj-btn" style="flex:1" id="aj-exp-csv">📊 Planilha (CSV)</button></div>
-      <button class="aj-btn aj-full" id="aj-imp">📂 Restaurar backup…</button>
+      <div style="display:flex;gap:8px"><button class="aj-btn" style="flex:1" id="aj-exp-json"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Backup (JSON)</button><button class="aj-btn" style="flex:1" id="aj-exp-csv"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>Planilha (CSV)</button></div>
+      <button class="aj-btn aj-full" id="aj-imp"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 21h16"/></svg>Restaurar backup…</button>
     </div>
 
     <div class="aj-sec">Conta</div>
     <div class="card">
       <div style="font-size:13px;color:#374151" id="aj-conta"></div>
-      <button class="aj-btn aj-full" id="aj-bloquear">🔒 Bloquear este aparelho</button>
-      <button class="aj-btn perigo aj-full" data-acao="sair">✕ Sair da conta</button>
+      <button class="aj-btn aj-full" id="aj-bloquear"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Bloquear este aparelho</button>
+      <button class="aj-btn perigo aj-full" data-acao="sair"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Sair da conta</button>
     </div>
     <div style="text-align:center;font-size:11px;color:#6b7280;margin:14px 0">MinhaCasa <span id="aj-versao"></span></div>
   </div>

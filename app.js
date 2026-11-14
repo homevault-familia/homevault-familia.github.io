@@ -6,13 +6,15 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.14.0';
+var VERSAO = '2.15.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
 // Parcelados desligados (pedido em 13/11/2026). Para religar, troque para true.
 var COM_PARCELADOS = false;
 var PALETA = ['#e53935', '#fb8c00', '#43a047', '#0284c7', '#00897b', '#d81b60', '#6d4c41', '#3949ab', '#f4511e', '#8e24aa', '#546e7a', '#c0a000'];
+var ICO_P = {"edit": "<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z\"/>", "trash": "<path d=\"M3 6h18\"/><path d=\"M8 6V4h8v2\"/><path d=\"M19 6l-1 14H6L5 6\"/><path d=\"M10 11v6M14 11v6\"/>", "check": "<path d=\"M20 6 9 17l-5-5\"/>", "file": "<path d=\"M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z\"/><path d=\"M14 3v6h6\"/>", "sliders": "<path d=\"M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6\"/>", "lock": "<rect x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/>", "download": "<path d=\"M12 3v12M7 10l5 5 5-5M4 21h16\"/>", "upload": "<path d=\"M12 15V3M7 8l5-5 5 5M4 21h16\"/>", "table": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M9 4v16\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "logout": "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"/><path d=\"M16 17l5-5-5-5M21 12H9\"/>", "calendar": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/>", "pie": "<path d=\"M21 12A9 9 0 1 1 12 3v9z\"/><path d=\"M21 12a9 9 0 0 0-9-9\"/>", "trend": "<path d=\"M3 17l6-6 4 4 8-8\"/><path d=\"M15 7h6v6\"/>", "key": "<circle cx=\"7.5\" cy=\"15.5\" r=\"4.5\"/><path d=\"m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2.5 2.5\"/>", "compass": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m15.5 8.5-2 5-5 2 2-5z\"/>"};
+function ICO(n) { return '<svg class="ic" aria-hidden="true" viewBox="0 0 24 24">' + ICO_P[n] + '</svg>'; }
 var EMOJIS = ['🚗', '⛽', '🛒', '🛍️', '🏠', '💡', '✈️', '🍽️', '☕', '🩺', '💊', '🐾', '👕', '📚', '🎓', '🎉', '🎮', '💳', '🏦', '📱', '🔧', '👶', '🏋️', '💇', '🎁', '🍺', '🧾', '📦', '⚽', '🏖️'];
 var MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 var MESES_C = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -378,7 +380,7 @@ function renderizar() {
   renderAvisoPeriodo();
   var hj = hoje();
   var totalHoje = T.todos.filter(function (l) { return l.data === hj; }).reduce(function (s, l) { return s + l.valor; }, 0);
-  $('txt-casa').textContent = '🏠 ' + (c.nome || 'MinhaCasa');
+  $('txt-casa').textContent = c.nome || 'MinhaCasa';
   $('txt-total').textContent = formatar(T.comum);
   var parc = T.tots[PARC] || 0;
   $('hero-parc-wrap').style.display = parc > 0 ? '' : 'none';
@@ -389,7 +391,7 @@ function renderizar() {
   var base = baseDisponivel(), rest = base - T.comum;
   $('txt-disponivel').textContent = base > 0 ? formatar(rest) : formatar(0);
   $('txt-disponivel').style.color = (base > 0 && rest < 0) ? '#ff6b6b' : 'white';
-  $('txt-restante').textContent = (+c.limite > 0) ? 'Limite: ' + formatar(c.limite) : (base > 0 ? 'Soma dos orçamentos: ' + formatar(base) : 'Defina o valor em ⚙️ Config');
+  $('txt-restante').textContent = (+c.limite > 0) ? 'Limite: ' + formatar(c.limite) : (base > 0 ? 'Soma dos orçamentos: ' + formatar(base) : 'Toque em Orçamento para definir');
   $('txt-hoje').textContent = 'Hoje: ' + formatar(totalHoje);
   var pct = base > 0 ? Math.min(T.comum / base * 100, 100) : 0;
   var excedeu = base > 0 && T.comum > base;
@@ -511,8 +513,8 @@ function linhaLanc(l, pagasMap, comData, classe) {
     '<div class="lanc-info"><div class="lanc-desc">' + esc(descLanc(l)) + parcelaBadgeHtml(l, pagasMap) + '</div>' +
     '<div class="lanc-meta">' + metaLanc(l, comData) + '</div></div>' +
     '<div class="lanc-valor" style="color:' + COR(l.cat) + '">' + formatar(l.valor) + '</div>' +
-    '<button class="lanc-edit" data-editar="' + l.id + '">✏️</button>' +
-    '<button class="lanc-del" data-excluir="' + l.id + '">🗑️</button></div>';
+    '<button class="lanc-edit" data-editar="' + l.id + '" aria-label="Editar lançamento">' + ICO('edit') + '</button>' +
+    '<button class="lanc-del" data-excluir="' + l.id + '" aria-label="Excluir lançamento">' + ICO('trash') + '</button></div>';
 }
 function renderizarRecentes(todos) {
   var hj = hoje();
@@ -617,7 +619,7 @@ function novoLancamento() {
   $('inp-valor').value = ''; $('inp-desc').value = ''; $('inp-data').value = hoje();
   $('valor-pre').textContent = SIMB[moeda()];
   $('add-hdr-title').textContent = 'Registrar Gasto';
-  $('btn-salvar-pro').textContent = '💾 Salvar Lançamento';
+  $('btn-salvar-pro').innerHTML = ICO('check') + 'Salvar lançamento';
   $('add-edit-extra').style.display = 'none';
   $('card-parc').style.display = COM_PARCELADOS ? '' : 'none'; // parcelamento retirado do app (13/11/2026)
   atualizarParcUI();
@@ -630,7 +632,7 @@ function editarLancamento(id) {
   $('inp-data').value = l.data; $('inp-desc').value = l.desc || '';
   $('valor-pre').textContent = SIMB[moeda()];
   $('add-hdr-title').textContent = l.parcela ? 'Editar parcela ' + l.parcela.n + '/' + l.parcela.total : 'Editar Lançamento';
-  $('btn-salvar-pro').textContent = '💾 Salvar Alterações';
+  $('btn-salvar-pro').innerHTML = ICO('check') + 'Salvar alterações';
   $('add-edit-extra').style.display = '';
   $('card-parc').style.display = 'none';
   irPara('add');
@@ -652,7 +654,7 @@ function renderAdd() {
     $('btn-salvar-pro').style.background = 'linear-gradient(135deg,' + cat.cor + 'dd,' + cat.cor + ')';
     $('btn-salvar-pro').style.boxShadow = '0 4px 14px ' + alfa(cat.cor, '55');
   } else {
-    hdr.style.background = ''; $('add-hdr-icon').textContent = '➕'; $('add-hdr-sub').textContent = 'Selecione a categoria';
+    hdr.style.background = ''; $('add-hdr-icon').innerHTML = ICO('plus'); $('add-hdr-sub').textContent = 'Selecione a categoria';
     $('btn-salvar-pro').style.background = ''; $('btn-salvar-pro').style.boxShadow = '';
   }
   if (cat && cat.subs.length && cat.id !== PARC) {
@@ -1316,7 +1318,7 @@ function renderizarSemana() {
   var dica = '';
   if (!r || !r.n) { el.innerHTML = dica + '<div class="vazio">📭 Nenhum gasto ' + (atual ? 'nesta semana até agora' : 'nesta semana') + '.<br><span style="font-size:12px">' + (atual ? 'Os lançamentos de segunda até hoje aparecem aqui.' : 'Esta tela mostra a semana fechada (segunda a domingo).') + '</span></div>'; return; }
   var st = statusSemana(r), cor = corStatus(st);
-  var ref = r.alvoSem > 0 ? (r.parcial ? 'Alvo até hoje pelo limite: <b>' : 'Alvo da semana pelo limite: <b>') + m0(r.alvoSem) + '</b>' : 'Sem limite definido (defina em Início → ⚙️ Config)';
+  var ref = r.alvoSem > 0 ? (r.parcial ? 'Alvo até hoje pelo limite: <b>' : 'Alvo da semana pelo limite: <b>') + m0(r.alvoSem) + '</b>' : 'Sem limite definido (defina em Início → Orçamento)';
   var resumo = '<div class="card sem-st" style="border-left-color:' + cor + '">' +
     '<div class="card-titulo">' + (r.parcial ? 'Semana em andamento · até hoje (' + r.diasDec + ' de 7 dias)' : 'Resumo da semana') + '</div>' +
     '<div style="font-size:30px;font-weight:900;color:' + cor + ';letter-spacing:-1px">' + m0(r.tot) + '</div>' +
@@ -2319,7 +2321,7 @@ function ligarEventos() {
   $('aj-novocod').onclick = novoCodigo;
   if (!$('aj-trocarsenha') && $('aj-membros')) {
     var bts = document.createElement('button'); bts.id = 'aj-trocarsenha'; bts.className = 'aj-btn aj-full'; bts.type = 'button';
-    bts.style.display = 'none'; bts.textContent = '🔑 Trocar senha da casa';
+    bts.style.display = 'none'; bts.innerHTML = ICO('key') + 'Trocar senha da casa';
     $('aj-membros').parentNode.insertBefore(bts, $('aj-membros').nextSibling);
     bts.onclick = abrirTrocarSenha;
   }
