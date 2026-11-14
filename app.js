@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.15.0';
+var VERSAO = '2.16.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -535,11 +535,58 @@ function preencherConfig() {
   $('inp-fim').value = c.periodo.fim;
   $('grid-orc').innerHTML = todasCats().map(function (cat) {
     return '<div class="campo-orc"><label>' + esc(cat.emoji + ' ' + cat.nome) + '</label>' +
-      '<input type="text" inputmode="decimal" data-orc="' + cat.id + '" placeholder="0" value="' + esc(numTxt(cat.orc)) + '"></div>';
+      '<input type="text" inputmode="decimal" data-orc="' + cat.id + '" data-orc-antes="' + (+cat.orc || 0) + '" placeholder="0" value="' + esc(numTxt(cat.orc)) + '"></div>';
   }).join('');
+  atualizarSaldoOrc();
 }
-function salvarConfigTopo() {
-  var c = S.cfg;
+
+// ── Trava do orçamento (14/11/2026) ──
+// A soma dos orçamentos das categorias não pode passar do "Valor para gastar no período".
+// Enquanto digita, a linha abaixo do título mostra quanto ainda falta distribuir; ao sair do campo,
+// um valor acima do que sobra é cortado para o máximo. Diminuir um orçamento é sempre permitido.
+function c2(n) { return Math.round((+n || 0) * 100) / 100; }
+function valOrcInp(inp) { var v = lerValor(inp.value); return isFinite(v) && v > 0 ? v : 0; }
+function somaOrcInputs(exceto) {
+  return c2(qsa('#grid-orc [data-orc]').reduce(function (s, inp) {
+    return inp === exceto || inp.dataset.orc === PARC ? s : s + valOrcInp(inp);
+  }, 0));
+}
+function limiteDigitado() { var v = lerValor($('inp-limite').value); return isFinite(v) && v > 0 ? v : 0; }
+function atualizarSaldoOrc() {
+  var el = $('orc-saldo'); if (!el) return;
+  var lim = limiteDigitado(), soma = somaOrcInputs(null), resto = c2(lim - soma);
+  qsa('#grid-orc [data-orc]').forEach(function (inp) {
+    if (inp.dataset.orc === PARC) return;
+    var max = Math.max(0, c2(lim - somaOrcInputs(inp)));
+    inp.classList.toggle('orc-excede', lim > 0 && valOrcInp(inp) > max + 0.004);
+    inp.placeholder = lim > 0 ? 'até ' + numTxt(max || 0) : '0';
+    if (lim > 0 && !max) inp.placeholder = '0';
+  });
+  if (!(lim > 0)) {
+    el.className = 'orc-saldo'; el.innerHTML = 'Soma das categorias: <b>' + formatar(soma) + '</b>. Defina o valor para gastar para controlar a distribuição.';
+  } else if (resto > 0.004) {
+    el.className = 'orc-saldo livre'; el.innerHTML = 'Distribuído <b>' + formatar(soma) + '</b> de ' + formatar(lim) + ' · ainda pode distribuir <b>' + formatar(resto) + '</b>';
+  } else if (resto > -0.005) {
+    el.className = 'orc-saldo cheio'; el.innerHTML = '✅ Todo o valor para gastar (' + formatar(lim) + ') está distribuído';
+  } else {
+    el.className = 'orc-saldo passou'; el.innerHTML = '⚠️ As categorias somam <b>' + formatar(soma) + '</b>, <b>' + formatar(-resto) + '</b> acima do valor para gastar. Reduza alguma categoria.';
+  }
+}
+// Corta o orçamento digitado para o que ainda sobra. Devolve true se cortou.
+function travarOrcInp(inp) {
+  var lim = limiteDigitado(); if (!(lim > 0) || inp.dataset.orc === PARC) return false;
+  var v = valOrcInp(inp), antes = +inp.dataset.orcAntes || 0, max = Math.max(0, c2(lim - somaOrcInputs(inp)));
+  if (v <= max + 0.004 || v <= antes) return false; // dentro do saldo, ou diminuindo
+  var novo = Math.max(max, antes);
+  inp.value = numTxt(novo);
+  var cat = catPorId(inp.dataset.orc);
+  mostrarToast('⚠️', (novo > 0 ? 'Máximo para ' + (cat ? cat.nome : 'esta categoria') + ': ' + formatar(novo) : 'Não sobrou nada do valor para gastar') +
+    '. As categorias não podem passar de ' + formatar(lim) + '.', 4500);
+  return true;
+}
+function salvarConfigTopo(alvo) {
+  var c = S.cfg, limAntes = +c.limite || 0;
+  if (alvo && alvo.dataset && alvo.dataset.orc) travarOrcInp(alvo);
   var lim = lerValor($('inp-limite').value);
   c.limite = isFinite(lim) && lim > 0 ? lim : 0;
   var pct = parseInt($('inp-alerta').value, 10);
@@ -553,7 +600,11 @@ function salvarConfigTopo() {
     var v = lerValor(inp.value); v = isFinite(v) && v > 0 ? v : 0;
     if (inp.dataset.orc === PARC) c.orcParc = v;
     else { var cat = catPorId(inp.dataset.orc); if (cat) cat.orc = v; }
+    inp.dataset.orcAntes = v;
   });
+  atualizarSaldoOrc();
+  if (alvo && alvo.id === 'inp-limite' && c.limite > 0 && c.limite !== limAntes && orcComum() > c.limite + 0.004)
+    mostrarToast('⚠️', 'As categorias somam ' + formatar(orcComum()) + ', acima do novo valor para gastar. Reduza alguma categoria.', 5000);
   salvarCfg();
   renderizar();
 }
@@ -1812,7 +1863,8 @@ function abrirOrcamentoInicial() {
     if (!(v > 0)) { $('oi-erro').textContent = 'Informe um valor válido, por exemplo 3.000,00.'; return; }
     if (!a || !b || a > b) { $('oi-erro').textContent = 'Confira as datas: o início precisa vir antes do fim.'; return; }
     S.cfg.limite = v; S.cfg.periodo = { inicio: a, fim: b };
-    salvarCfg().then(function () { fecharSheet(); mostrarToast('✅', 'Orçamento salvo'); renderTela(); }, function () { $('oi-erro').textContent = 'Não foi possível salvar agora. Tente de novo.'; });
+    var somaC = orcComum();
+    salvarCfg().then(function () { fecharSheet(); mostrarToast(somaC > v + 0.004 ? '⚠️' : '✅', somaC > v + 0.004 ? 'Salvo. Mas as categorias somam ' + formatar(somaC) + ', acima do limite: reduza em Início → Configurações.' : 'Orçamento salvo', somaC > v + 0.004 ? 5500 : undefined); renderTela(); }, function () { $('oi-erro').textContent = 'Não foi possível salvar agora. Tente de novo.'; });
   };
 }
 
@@ -1891,6 +1943,7 @@ function abrirCat(id) {
   }
   var orig = id ? catPorId(id) : null;
   _ed = orig ? JSON.parse(JSON.stringify(orig)) : { id: rid(8), emoji: '📦', nome: '', cor: PALETA[catsComuns().length % PALETA.length], orc: 0, subs: [], nova: true };
+  _ed.orcAntes = +_ed.orc || 0;
   desenharCat();
 }
 function desenharCat() {
@@ -1898,6 +1951,7 @@ function desenharCat() {
   abrirSheet('<h3>' + (c.nova ? 'Nova categoria' : 'Editar categoria') + '</h3>' +
     '<label class="aj-label">Nome</label><input class="aj-input" id="ed-nome" maxlength="30" value="' + esc(c.nome) + '">' +
     '<label class="aj-label">Orçamento no período</label><input class="aj-input" id="ed-orc" inputmode="decimal" placeholder="0 = sem orçamento" value="' + esc(numTxt(c.orc)) + '">' +
+    '<div class="ed-orc-info" id="ed-orc-info"></div>' +
     '<label class="aj-label">Ícone</label><div class="emo-grid">' + EMOJIS.map(function (e) { return '<button class="' + (e === c.emoji ? 'on' : '') + '" data-emo="' + e + '">' + e + '</button>'; }).join('') + '</div>' +
     '<label class="aj-label">Cor</label><div class="cor-grid">' + PALETA.map(function (k) { return '<button class="' + (k === c.cor ? 'on' : '') + '" data-cor="' + k + '" style="background:' + k + '"></button>'; }).join('') + '</div>' +
     '<label class="aj-label">Subcategorias</label>' +
@@ -1907,6 +1961,23 @@ function desenharCat() {
     '<button class="aj-btn pri aj-full" id="ed-salvar">Salvar categoria</button>' +
     '<button class="aj-btn aj-full" data-fechar>Cancelar</button>' +
     (c.nova ? '' : '<button class="aj-btn perigo aj-full" id="ed-excluir">Excluir categoria</button>'));
+  $('ed-orc').oninput = infoOrcCat; infoOrcCat();
+}
+// Trava do orçamento na edição da categoria: quanto ainda sobra do valor para gastar para esta categoria.
+function maxOrcCat(id) {
+  var lim = +S.cfg.limite || 0; if (!(lim > 0)) return Infinity;
+  var outros = catsComuns().reduce(function (s, x) { return x.id === id ? s : s + (+x.orc || 0); }, 0);
+  return Math.max(0, c2(lim - outros));
+}
+function infoOrcCat() {
+  var el = $('ed-orc-info'); if (!el || !_ed) return;
+  var max = maxOrcCat(_ed.id);
+  if (max === Infinity) { el.textContent = 'Sem "valor para gastar" definido no Início, então não há limite para a soma das categorias.'; el.className = 'ed-orc-info'; return; }
+  var v = lerValor($('ed-orc').value); v = isFinite(v) && v > 0 ? v : 0;
+  var passou = v > max + 0.004 && v > (_ed.orcAntes || 0);
+  el.className = 'ed-orc-info' + (passou ? ' passou' : '');
+  el.innerHTML = passou ? '⚠️ Passa ' + formatar(c2(v - max)) + ' do que sobra. Máximo para esta categoria: <b>' + formatar(max) + '</b>.'
+    : 'Disponível para esta categoria: até <b>' + formatar(max) + '</b> (valor para gastar ' + formatar(+S.cfg.limite) + ').' + (v ? ' Depois sobram ' + formatar(c2(max - v)) + ' para as outras.' : '');
 }
 function lerCatInputs() {
   if (!_ed || !$('ed-nome')) return;
@@ -1918,6 +1989,12 @@ function salvarCat() {
   lerCatInputs();
   var c = _ed; c.nome = c.nome.trim();
   if (!c.nome) { $('ed-erro').textContent = 'Informe o nome da categoria.'; return; }
+  var maxO = maxOrcCat(c.id);
+  if (c.orc > maxO + 0.004 && c.orc > (c.orcAntes || 0)) {
+    $('ed-erro').textContent = 'A soma das categorias passaria do valor para gastar (' + formatar(+S.cfg.limite) + '). O máximo para esta categoria é ' + formatar(maxO) + '.';
+    return;
+  }
+  delete c.orcAntes;
   var pend = $('ed-novasub').value.trim();
   if (pend) c.subs.push({ id: rid(8), nome: pend });
   c.subs = c.subs.map(function (s) { return { id: s.id, nome: s.nome.trim() }; }).filter(function (s) { return s.nome; });
@@ -2283,7 +2360,8 @@ function ligarEventos() {
   $('cfg-toggle').onclick = toggleConfig;
   $('topo-config').addEventListener('focusin', function () { $('topo-config').classList.add('editando'); });
   $('topo-config').addEventListener('focusout', function () { $('topo-config').classList.remove('editando'); });
-  $('topo-config').addEventListener('change', function (e) { if (e.target.tagName === 'INPUT') salvarConfigTopo(); });
+  $('topo-config').addEventListener('change', function (e) { if (e.target.tagName === 'INPUT') salvarConfigTopo(e.target); });
+  $('topo-config').addEventListener('input', function (e) { if (e.target.id === 'inp-limite' || (e.target.dataset && e.target.dataset.orc)) atualizarSaldoOrc(); });
   $('cfg-cats').onclick = function () { irPara('ajustes'); };
   $('cfg-ajustes').onclick = function () { irPara('ajustes'); };
   $('cfg-backup').onclick = exportarJSON;
