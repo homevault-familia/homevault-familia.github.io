@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.10.2';
+var VERSAO = '2.10.3';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -180,7 +180,34 @@ function normalizarCfg(c) {
     if (c.orcParc == null) c.orcParc = 0;
     c.v = 2; mudou = true;
   }
+  limparCfg(c);
   return { cfg: c, mudou: mudou };
+}
+// Segurança (14/11/2026): tudo o que vem do banco ou de um backup é conferido antes de ir para a tela.
+// Ids só com letras, números, _ e -; cores só no formato #rrggbb; textos com tamanho máximo.
+var ID_OK = /^[A-Za-z0-9_-]{1,64}$/, COR_OK = /^#[0-9a-fA-F]{6}$/, DATA_OK = /^\d{4}-\d{2}-\d{2}$/;
+function txtCurto(v, max) { return String(v == null ? '' : v).slice(0, max); }
+function limparCfg(c) {
+  c.nome = txtCurto(c.nome || 'Minha casa', 60);
+  if (!SIMB[c.moeda]) c.moeda = 'CAD';
+  c.limite = isFinite(+c.limite) && +c.limite > 0 ? +c.limite : 0;
+  c.alertaPct = isFinite(+c.alertaPct) && +c.alertaPct > 0 ? Math.min(100, +c.alertaPct) : 80;
+  if (!c.periodo || !DATA_OK.test(c.periodo.inicio) || !DATA_OK.test(c.periodo.fim)) c.periodo = periodoMesAtual();
+  c.cats = (Array.isArray(c.cats) ? c.cats : []).filter(function (x) { return x && ID_OK.test(x.id); }).map(function (x, i) {
+    return { id: x.id, emoji: txtCurto(x.emoji || '📦', 8), nome: txtCurto(x.nome || 'Categoria', 40),
+      cor: COR_OK.test(x.cor) ? x.cor : PALETA[i % PALETA.length], orc: isFinite(+x.orc) && +x.orc > 0 ? +x.orc : 0,
+      subs: (Array.isArray(x.subs) ? x.subs : []).filter(function (u) { return u && ID_OK.test(u.id); }).map(function (u) { return { id: u.id, nome: txtCurto(u.nome || 'Sub', 40) }; }) };
+  });
+  return c;
+}
+function limparReg(id, r) {
+  if (!ID_OK.test(String(id)) || !r || typeof r !== 'object') return null;
+  var o = { v: Math.max(0, Math.round(+r.v || 0)), dt: DATA_OK.test(r.dt) ? r.dt : null, c: ID_OK.test(r.c) ? r.c : null,
+    s: ID_OK.test(r.s) ? r.s : null, d: txtCurto(r.d, 200), por: ID_OK.test(r.por) ? r.por : null, ts: +r.ts || 0 };
+  if (r.t) o.t = txtCurto(r.t, 20);
+  if (r.p && typeof r.p === 'object') o.p = { n: Math.max(1, Math.round(+r.p.n || 1)), total: Math.max(1, Math.round(+r.p.total || 1)), g: ID_OK.test(r.p.g) ? r.p.g : 'g', vt: Math.max(0, Math.round(+r.p.vt || 0)) };
+  if (!o.dt || !(o.v > 0) || o.v > VALOR_MAX * 100) return null;
+  return o;
 }
 function catsComuns() { return (S.cfg && S.cfg.cats) || []; }
 function catParc() { return { id: PARC, emoji: '📦', nome: 'Parcelados', cor: '#7c3aed', orc: (S.cfg && +S.cfg.orcParc) || 0, subs: [] }; }
@@ -1866,7 +1893,7 @@ function importarJSON(arquivo) {
     S.cfg.cats.forEach(function (c) { existentes[c.id] = true; });
     (normalizarCfg(JSON.parse(JSON.stringify(cfgB))).cfg.cats || []).forEach(function (c) { if (c && c.id && !existentes[c.id]) S.cfg.cats.push(c); });
     var ps = [salvarCfg()];
-    ids.forEach(function (id) { var x = regs[id]; if (x && x.v > 0 && /^\d{4}-\d{2}-\d{2}$/.test(x.dt)) ps.push(gravarLanc(id, x)); });
+    ids.forEach(function (id) { var x = limparReg(id, regs[id]); if (x) ps.push(gravarLanc(id, x)); });
     Promise.all(ps).then(function () { mostrarToast('✅', 'Backup restaurado'); }, function () { mostrarToast('⚠️', 'Parte do backup não foi salva'); });
   };
   r.readAsText(arquivo);
@@ -1967,7 +1994,7 @@ function escutar() {
       else renderLogo();
     });
   }, negado);
-  function addLanc(s) { var id = s.key; decifrar(S.chave, s.val()).then(function (l) { S.raw[id] = l; renderLogo(); }, function () {}); }
+  function addLanc(s) { var id = s.key; decifrar(S.chave, s.val()).then(function (l) { var r = limparReg(id, l); if (r) S.raw[id] = r; else delete S.raw[id]; renderLogo(); }, function () {}); }
   rLanc.on('child_added', addLanc, negado);
   rLanc.on('child_changed', addLanc);
   rLanc.on('child_removed', function (s) { delete S.raw[s.key]; renderLogo(); });
@@ -2198,6 +2225,6 @@ function ligarEventos() {
   $('aj-bloquear').onclick = bloquear;
 }
 
-window.__HV = { gravarLanc: gravarLanc, analisarSemana: analisarSemana, S: S, lerValor: lerValor, formatar: formatar, lancamentos: lancamentos, totaisPeriodo: totaisPeriodo };
+if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__HV = { gravarLanc: gravarLanc, analisarSemana: analisarSemana, S: S, lerValor: lerValor, formatar: formatar, lancamentos: lancamentos, totaisPeriodo: totaisPeriodo };
 iniciar();
 })();
