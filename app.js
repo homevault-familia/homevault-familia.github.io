@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.12.0';
+var VERSAO = '2.13.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -395,7 +395,19 @@ function renderizar() {
   var excedeu = base > 0 && T.comum > base;
   $('barra').style.width = pct + '%';
   $('barra').style.background = excedeu ? '#f44336' : pct >= c.alertaPct ? '#ff9800' : '#4caf50';
-  $('txt-pct').textContent = pct.toFixed(1) + '% utilizado';
+  $('txt-pct').textContent = base > 0 ? pct.toFixed(1) + '% utilizado' : 'Sem orçamento definido';
+  // Sem orçamento (14/11/2026): o cartão "Disponível" vira um botão para definir o limite
+  var pill = document.querySelector('#tela-inicio .hero-pill');
+  if (pill) {
+    pill.classList.toggle('sem-orc', !(base > 0));
+    if (!(base > 0)) {
+      $('txt-disponivel').textContent = 'Definir orçamento';
+      $('txt-restante').textContent = 'Toque para informar quanto pode gastar no período';
+    }
+    pill.onclick = base > 0 ? null : function () { abrirOrcamentoInicial(); };
+  }
+  $('barra').parentNode.style.display = base > 0 ? '' : 'none';
+  if (S.pedirOrc && !(base > 0)) { S.pedirOrc = false; setTimeout(abrirOrcamentoInicial, 600); }
   var al = $('alerta');
   if (excedeu) { al.className = 'alerta excedido'; al.textContent = '🚨 LIMITE EXCEDIDO! Você gastou ' + formatar(T.comum - base) + ' além do disponível.'; }
   else if (base > 0 && pct >= c.alertaPct) { al.className = 'alerta atencao'; al.textContent = '⚠️ Atenção: ' + pct.toFixed(0) + '% do disponível utilizado. Restam ' + formatar(rest) + '.'; }
@@ -414,8 +426,7 @@ function renderizar() {
         '<div class="cat-barra-fundo" style="display:block"><div class="cat-barra-fill" style="width:' + pC + '%;background:' + corB + '"></div></div>' +
         '<div class="cat-orc" style="color:' + (restC < 0 ? '#f44336' : '#bbb') + '">' + pC.toFixed(0) + '% utilizado</div>';
     } else {
-      corpo = '<div class="cat-linha-vals"><div><div class="cat-rotulo">Gasto</div><div class="cat-valor" style="color:' + cat.cor + '">' + formatar(gasto) + '</div><div class="cat-sub-orc"></div></div>' +
-        '<div style="text-align:right"><div class="cat-rotulo">Disponível</div><div class="cat-valor" style="color:#ccc">—</div></div></div>';
+      corpo = '<div class="cat-linha-vals"><div><div class="cat-rotulo">Gasto</div><div class="cat-valor" style="color:' + cat.cor + '">' + formatar(gasto) + '</div><div class="cat-sub-orc" style="color:#6b7280">Sem orçamento</div></div></div>';
     }
     return '<div class="card-cat" data-cat="' + cat.id + '">' +
       '<div class="cat-header"><span class="cat-icon" style="background:' + alfa(cat.cor, '22') + '">' + esc(cat.emoji) + '</span><span class="cat-nome">' + esc(cat.nome) + '</span><span class="cat-qtd">' + qtd + ' lanç.</span></div>' +
@@ -837,8 +848,9 @@ function renderizarRelatorio() {
   var excede = projecao > 0 && lim > 0 && projecao > lim, dentro = projecao > 0 && lim > 0 && !excede;
   var met = '<div class="rel-metricas">' +
     '<div class="rel-met-card"><div class="rel-met-val" style="color:#1565c0">' + formatar(grand) + '</div><div class="rel-met-lbl">Total Gasto</div><div class="rel-met-sub">' + diasCom + ' dias c/ gasto</div></div>' +
-    '<div class="rel-met-card"><div class="rel-met-val" style="color:' + (disp < 0 ? '#f44336' : '#43a047') + '">' + formatar(disp) + '</div><div class="rel-met-lbl">Disponível</div><div class="rel-met-sub">Limite: ' + formatar(lim) + '</div></div>' +
-    '<div class="rel-met-card"><div class="rel-met-val" style="color:' + corLim + '">' + pctLim.toFixed(1) + '%</div><div class="rel-met-lbl">% do Limite</div><div class="rel-met-sub">' + T.nComuns + ' lançamentos</div></div>' +
+    (lim > 0 ? '<div class="rel-met-card"><div class="rel-met-val" style="color:' + (disp < 0 ? '#f44336' : '#43a047') + '">' + formatar(disp) + '</div><div class="rel-met-lbl">Disponível</div><div class="rel-met-sub">Limite: ' + formatar(lim) + '</div></div>' +
+    '<div class="rel-met-card"><div class="rel-met-val" style="color:' + corLim + '">' + pctLim.toFixed(1) + '%</div><div class="rel-met-lbl">% do Limite</div><div class="rel-met-sub">' + T.nComuns + ' lançamentos</div></div>'
+    : '<div class="rel-met-card" style="grid-column:span 2;cursor:pointer" id="rel-sem-orc"><div class="rel-met-val" style="color:#b45309;font-size:17px">Sem orçamento definido</div><div class="rel-met-sub" style="color:#4b5563">Toque para informar o limite do período e ver quanto ainda pode gastar. ' + T.nComuns + ' lançamentos no período.</div></div>') +
     '<div class="rel-met-card" style="background:' + (excede ? '#fef2f2' : dentro ? '#f0fdf4' : 'white') + ';border:' + (excede ? '2px solid #ef4444' : dentro ? '2px solid #22c55e' : 'none') + '">' +
     '<div class="rel-met-val" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#555') + '">' + formatar(mediaDia) + '</div><div class="rel-met-lbl">Média por dia</div>' +
     '<div class="rel-met-sub" style="color:' + (excede ? '#ef4444' : dentro ? '#16a34a' : '#9ca3af') + ';font-weight:700">Projeção: ' + formatar(projecao) + '</div></div>' +
@@ -913,6 +925,7 @@ function renderizarRelatorio() {
   el.innerHTML = '<div style="font-size:12px;color:#aaa;font-weight:600;margin-bottom:10px;text-align:center">📅 ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '</div>' +
     met + cats + top + diasLim + heat + sem +
     '<div class="card"><button class="btn-whatsapp" id="rel-wa">📱 Enviar por WhatsApp</button></div>';
+  if ($('rel-sem-orc')) $('rel-sem-orc').onclick = abrirOrcamentoInicial;
   $('rel-wa').onclick = function () {
     var msg = '📊 *RELATÓRIO — ' + formatarData(per.inicio) + ' → ' + formatarData(per.fim) + '*\n━━━━━━━━━━━━━━━━\n';
     todasCats().forEach(function (c) { var g = T.tots[c.id] || 0; if (g || +c.orc) msg += c.emoji + ' ' + c.nome + ': ' + formatar(g) + (+c.orc ? ' / ' + formatar(c.orc) : '') + '\n'; });
@@ -1778,6 +1791,28 @@ function abrirSheet(html) {
 }
 function fecharSheet() { $('sheet').classList.remove('on'); _ed = null; }
 
+// Orçamento inicial (14/11/2026): pergunta o limite do período logo depois de criar a casa,
+// e também quando a pessoa toca em "Definir orçamento". Pode pular e definir depois.
+function abrirOrcamentoInicial() {
+  var p = S.cfg.periodo;
+  abrirSheet('<div style="font-size:17px;font-weight:800;margin-bottom:6px">💰 Quanto vocês podem gastar?</div>' +
+    '<div style="font-size:13px;color:#4b5563;line-height:1.45;margin-bottom:10px">Com um limite, o app mostra quanto ainda está disponível, avisa quando estiver perto de estourar e calcula quanto dá para gastar por dia.</div>' +
+    '<label class="aj-label" for="oi-limite">Limite de gastos no período (' + (SIMB[moeda()] || '$') + ')</label><input class="aj-input" id="oi-limite" inputmode="decimal" placeholder="Ex.: 3.000,00">' +
+    '<div style="display:flex;gap:8px"><div style="flex:1"><label class="aj-label" for="oi-ini">Início do período</label><input class="aj-input" id="oi-ini" type="date" value="' + esc(p.inicio) + '"></div>' +
+    '<div style="flex:1"><label class="aj-label" for="oi-fim">Fim</label><input class="aj-input" id="oi-fim" type="date" value="' + esc(p.fim) + '"></div></div>' +
+    '<div style="font-size:12px;color:#6b7280;margin-top:6px">Dá para mudar depois em Início → Configurações. Os orçamentos de cada categoria ficam em Ajustes.</div>' +
+    '<div id="oi-erro" style="color:#dc2626;font-size:13px;margin-top:8px;min-height:18px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:4px"><button class="aj-btn" style="flex:1" id="oi-depois">Depois</button><button class="aj-btn pri" style="flex:1" id="oi-ok">Salvar</button></div>');
+  $('oi-depois').onclick = fecharSheet;
+  $('oi-ok').onclick = function () {
+    var v = lerValor($('oi-limite').value), a = $('oi-ini').value, b = $('oi-fim').value;
+    if (!(v > 0)) { $('oi-erro').textContent = 'Informe um valor válido, por exemplo 3.000,00.'; return; }
+    if (!a || !b || a > b) { $('oi-erro').textContent = 'Confira as datas: o início precisa vir antes do fim.'; return; }
+    S.cfg.limite = v; S.cfg.periodo = { inicio: a, fim: b };
+    salvarCfg().then(function () { fecharSheet(); mostrarToast('✅', 'Orçamento salvo'); renderTela(); }, function () { $('oi-erro').textContent = 'Não foi possível salvar agora. Tente de novo.'; });
+  };
+}
+
 // ── Trocar senha da casa (14/11/2026) ──
 // Só o dono. Gera chave nova, recriptografa config, lançamentos e perfis e troca salt, verificação, prova e convite
 // numa única gravação (tudo ou nada). Os outros membros passam a precisar da senha nova.
@@ -2173,6 +2208,7 @@ function entrouNaCasa(casa, chave, criou) {
       S.casa = casa; S.meta = snap.val();
       abrirCasa(chave);
       mostrarToast(criou ? '🎉' : '👋', criou ? 'Casa criada!' : 'Bem-vindo(a) à casa!');
+      if (criou) S.pedirOrc = true;
     });
 }
 function desbloquear() {
