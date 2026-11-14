@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.9.0';
+var VERSAO = '2.9.1';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -543,7 +543,7 @@ function novoLancamento() {
   $('add-hdr-title').textContent = 'Registrar Gasto';
   $('btn-salvar-pro').textContent = '💾 Salvar Lançamento';
   $('add-edit-extra').style.display = 'none';
-  $('card-parc').style.display = '';
+  $('card-parc').style.display = COM_PARCELADOS ? '' : 'none'; // parcelamento retirado do app (13/11/2026)
   atualizarParcUI();
 }
 function editarLancamento(id) {
