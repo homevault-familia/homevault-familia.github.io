@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.17.0';
+var VERSAO = '2.18.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -1808,6 +1808,7 @@ function renderAjustes() {
       '<small>' + esc(p.email || '') + (dono ? ' · criou a casa' : '') + '</small></div>' +
       (souDono() && !eu ? '<button class="aj-btn perigo" data-remover="' + uid + '">Remover</button>' : '') + '</div>';
   }).join('');
+  renderAdmin();
   $('aj-conta').textContent = 'Conectado como ' + (S.user.email || '') + '.';
   $('aj-versao').textContent = VERSAO;
 }
@@ -2001,6 +2002,40 @@ function excluirCat() {
 }
 
 // Convite / membros
+// ── Administrador (14/11/2026) ──
+// O cartão só aparece se o Firebase deixar ler admin/codigoAcesso. Quem pode ler e trocar é decidido nas regras
+// (o dono da casa do Luiz), então esconder o cartão não é a proteção: a proteção é o servidor recusar os outros.
+var _adm = { uid: null, codigo: null, confirmar: false };
+function renderAdmin() {
+  var box = $('aj-admin'); if (!box || !S.user) return;
+  if (_adm.uid === S.user.uid) { mostrarAdmin(); return; }
+  _adm.uid = S.user.uid; _adm.codigo = null;
+  db.ref('admin/codigoAcesso').once('value').then(function (snap) { _adm.codigo = snap.val() || ''; mostrarAdmin(); }, function () { _adm.codigo = null; box.style.display = 'none'; });
+}
+function mostrarAdmin() {
+  var box = $('aj-admin'); if (_adm.codigo === null) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  $('adm-codigo').textContent = _adm.codigo || '(nenhum código: ninguém consegue criar casa)';
+  $('adm-copiar').onclick = function () { if (_adm.codigo) copiar(_adm.codigo); };
+  $('adm-compart').onclick = function () {
+    if (!_adm.codigo) return;
+    var txt = '🏠 Você foi convidado para testar o Minha Casa!\n\n1. Abra: https://www.minhacasaapp.com\n2. Crie sua conta (e-mail e senha)\n3. Em "Criar casa", use o código de acesso: ' + _adm.codigo;
+    if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else copiar(txt);
+  };
+  var bn = $('adm-novo');
+  bn.textContent = _adm.confirmar ? 'Toque de novo para confirmar' : 'Trocar código de acesso';
+  bn.classList.toggle('perigo', _adm.confirmar);
+  bn.onclick = function () {
+    if (!_adm.confirmar) { _adm.confirmar = true; mostrarAdmin(); setTimeout(function () { if (_adm.confirmar) { _adm.confirmar = false; mostrarAdmin(); } }, 5000); return; }
+    _adm.confirmar = false;
+    var a = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', r = crypto.getRandomValues(new Uint8Array(8)), c = 'CASA-';
+    for (var i = 0; i < 8; i++) { c += a[r[i] % a.length]; if (i === 3) c += '-'; }
+    bn.disabled = true; $('adm-erro').textContent = '';
+    db.ref('admin/codigoAcesso').set(c).then(function () { _adm.codigo = c; mostrarToast('🔑', 'Código novo: ' + c + '. O anterior não vale mais.', 5000); },
+      function (e) { $('adm-erro').textContent = 'Não foi possível trocar o código (' + ((e && e.code) || e) + ').'; })
+      .then(function () { bn.disabled = false; mostrarAdmin(); });
+  };
+}
 function copiar(txt) {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { mostrarToast('📋', 'Copiado'); }, function () { mostrarToast('ℹ️', 'Toque e segure o código para copiar'); });
   else mostrarToast('ℹ️', 'Toque e segure o código para copiar');

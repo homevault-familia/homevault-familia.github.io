@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="app-version" content="2.17.0">
+<meta name="app-version" content="2.18.0">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1274,6 +1274,17 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <div class="codigo" id="aj-codigo"></div>
       <div style="display:flex;gap:8px;margin-top:10px"><button class="aj-btn" style="flex:1" id="aj-copiar">Copiar código</button><button class="aj-btn" style="flex:1" id="aj-compart">Compartilhar</button></div>
       <button class="aj-btn aj-full" id="aj-novocod" style="display:none">Gerar novo código (o anterior deixa de valer)</button>
+    </div>
+
+    <div id="aj-admin" style="display:none">
+      <div class="aj-sec">🔑 Administrador · só você vê</div>
+      <div class="card">
+        <div style="font-size:13px;color:#4b5563;line-height:1.45;margin-bottom:8px">Código para <b>novos testadores</b> criarem a casa deles. Quem você convida para a <b>sua</b> casa não precisa dele.</div>
+        <div class="codigo" id="adm-codigo">…</div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="aj-btn" style="flex:1" id="adm-copiar">Copiar código</button><button class="aj-btn" style="flex:1" id="adm-compart">Enviar convite</button></div>
+        <button class="aj-btn aj-full" id="adm-novo">Trocar código de acesso</button>
+        <div class="login-erro" id="adm-erro" style="margin-top:6px"></div>
+      </div>
     </div>
 
     <div class="aj-sec">Membros</div>

@@ -3,6 +3,15 @@
     ".read": false,
     ".write": false,
 
+    "admin": {
+      ".read": "auth != null && root.child('casas').child('rq5rebb3st67qyz4wuz9').child('dono').val() === auth.uid",
+      "codigoAcesso": {
+        ".write": "auth != null && root.child('casas').child('rq5rebb3st67qyz4wuz9').child('dono').val() === auth.uid",
+        ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9-]{6,40}$/)"
+      },
+      "$outro": { ".validate": false }
+    },
+
     "usuarios": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
