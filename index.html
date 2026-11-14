@@ -854,6 +854,20 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 .rel-tile span { font-size: 12.5px; color: #4b5563; line-height: 1.35; }
 .rel-tile:active { transform: scale(.98); background: #f8fafc; }
 .rel-sec-tit { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #4b5563; margin: 4px 2px 8px; }
+
+.nav button#nb-add .nav-fab-circle { top: -20px; width: 50px; height: 48px; border-radius: 14px; }
+.nav-fab-lbl2 { position: relative; z-index: 1; }
+/* ── Rodada 3b (14/11/2026): no computador, o app vira uma coluna central em vez de esticar ── */
+@media (min-width: 720px) {
+  html { background: #e2e8f0; }
+  body { max-width: 600px; margin: 0 auto; min-height: 100vh; background: #f0f2f5; box-shadow: 0 0 0 1px #cbd5e1, 0 20px 60px rgba(15,23,42,.12); }
+  .nav { left: calc(50% - 300px); right: calc(50% - 300px); }
+  .toast { left: calc(50% - 288px); right: calc(50% - 288px); }
+  .dup2-overlay, .edit-overlay { align-items: center; }
+  .hv-sheet { align-items: center; }
+  .hv-sheet-box { border-radius: 22px; }
+  .rel-hub { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 </style>
 </head>
 <body>
