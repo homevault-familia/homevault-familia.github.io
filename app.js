@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.10.3';
+var VERSAO = '2.11.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -1752,6 +1752,7 @@ function renderAjustes() {
   $('aj-copiar').textContent = 'Copiar link';
   var dsc = $('aj-codigo').previousElementSibling; if (dsc) dsc.innerHTML = 'Toque em <b>Compartilhar</b> e mande o link pelo WhatsApp. A pessoa toca no link, cria a conta e digita a <b>senha da casa</b>, que você passa <b>à parte</b> (pessoalmente ou por ligação).';
   $('aj-novocod').style.display = souDono() ? '' : 'none';
+  if ($('aj-trocarsenha')) $('aj-trocarsenha').style.display = souDono() ? '' : 'none';
   $('aj-membros').innerHTML = Object.keys(S.membros).map(function (uid) {
     var p = S.perfis[uid] || {}, eu = uid === S.user.uid, dono = S.meta && S.meta.dono === uid;
     return '<div class="aj-linha"><div class="aj-ic" style="background:#eef2ff">👤</div><div class="aj-nm">' + esc(p.nome || 'Membro') + (eu ? ' (você)' : '') +
@@ -1783,6 +1784,72 @@ function abrirSheet(html) {
   $('sheet').classList.add('on');
 }
 function fecharSheet() { $('sheet').classList.remove('on'); _ed = null; }
+
+// ── Trocar senha da casa (14/11/2026) ──
+// Só o dono. Gera chave nova, recriptografa config, lançamentos e perfis e troca salt, verificação, prova e convite
+// numa única gravação (tudo ou nada). Os outros membros passam a precisar da senha nova.
+function abrirTrocarSenha() {
+  if (!souDono()) return;
+  abrirSheet('<div class="sheet-tit" style="font-size:17px;font-weight:800;margin-bottom:6px">🔑 Trocar senha da casa</div>' +
+    '<div style="font-size:13px;color:#4b5563;line-height:1.45;margin-bottom:10px">Use quando alguém sair da casa ou se a senha vazou. Os outros membros vão precisar digitar a senha nova, e o link de convite antigo para de valer.</div>' +
+    '<label class="aj-label" for="ts-atual">Senha atual da casa</label><input class="aj-input" id="ts-atual" type="password" autocomplete="off">' +
+    '<label class="aj-label" for="ts-nova">Senha nova (mínimo 10 caracteres)</label><input class="aj-input" id="ts-nova" type="password" autocomplete="new-password">' +
+    '<label class="aj-label" for="ts-nova2">Repita a senha nova</label><input class="aj-input" id="ts-nova2" type="password" autocomplete="new-password">' +
+    '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#374151;margin-top:10px"><input type="checkbox" id="ts-ciente" style="margin-top:3px"> Anotei a senha nova. Sem ela, ninguém consegue abrir os dados (nem eu).</label>' +
+    '<div id="ts-erro" style="color:#dc2626;font-size:13px;margin-top:8px;min-height:18px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:6px"><button class="aj-btn" style="flex:1" id="ts-cancelar">Cancelar</button><button class="aj-btn pri" style="flex:1" id="ts-ok">Trocar senha</button></div>');
+  $('ts-cancelar').onclick = fecharSheet;
+  $('ts-ok').onclick = trocarSenhaCasa;
+}
+function trocarSenhaCasa() {
+  var atual = $('ts-atual').value, nova = $('ts-nova').value, nova2 = $('ts-nova2').value, er = $('ts-erro');
+  er.textContent = '';
+  if (!atual) { er.textContent = 'Digite a senha atual.'; return; }
+  if (nova.length < 10) { er.textContent = 'A senha nova precisa ter pelo menos 10 caracteres.'; return; }
+  if (nova !== nova2) { er.textContent = 'As senhas novas não conferem.'; return; }
+  if (nova === atual) { er.textContent = 'A senha nova precisa ser diferente da atual.'; return; }
+  if (!$('ts-ciente').checked) { er.textContent = 'Confirme que anotou a senha nova.'; return; }
+  var btn = $('ts-ok'); btn.disabled = true; btn.textContent = 'Trocando…';
+  var casa = S.casa, salt = b64(crypto.getRandomValues(new Uint8Array(16))), convite = rid(24), nk, upd = {};
+  derivarChave(atual, S.meta.salt)
+    .then(function (k) { return decifrar(k, S.meta.verif).catch(function () { throw { msg: 'Senha atual incorreta.' }; }); })
+    .then(function () { return derivarChave(nova, salt); })
+    .then(function (k) {
+      nk = k;
+      var ps = [cifrar(nk, VERIF_TEXTO).then(function (v) { upd.verif = v; }),
+        provaDaChave(nk).then(function (pv) { upd.prova = pv; }),
+        cifrar(nk, S.cfg).then(function (c) { upd['dados/config'] = c; })];
+      Object.keys(S.raw).forEach(function (id) { ps.push(cifrar(nk, S.raw[id]).then(function (c) { upd['dados/lanc/' + id] = c; })); });
+      Object.keys(S.perfis || {}).forEach(function (uid) { ps.push(cifrar(nk, S.perfis[uid]).then(function (c) { upd['dados/perfis/' + uid] = c; })); });
+      return Promise.all(ps);
+    })
+    .then(function () {
+      upd.salt = salt; upd.convite = convite; upd.convVer = 2;
+      upd['membros/' + S.user.uid] = convite + ':' + upd.prova;
+      pararEscuta();
+      return db.ref('casas/' + casa).update(upd);
+    })
+    .then(function () {
+      S.meta.salt = salt; S.meta.verif = upd.verif; S.meta.prova = upd.prova; S.meta.convite = convite; S.meta.convVer = 2;
+      return IDB.set(S.user.uid + ':' + casa, nk);
+    })
+    .then(function () { fecharSheet(); abrirCasa(nk); mostrarToast('🔑', 'Senha da casa trocada. Mande o link de convite novo para quem mora com você.'); })
+    .catch(function (e) {
+      if (S.chave && !S.refs.length) escutar();
+      er.textContent = (e && e.msg) || 'Não foi possível trocar a senha agora (' + ((e && e.code) || 'erro') + '). Nada foi alterado.';
+      btn.disabled = false; btn.textContent = 'Trocar senha';
+    });
+}
+// Membro cuja chave guardada deixou de abrir os dados: a senha da casa foi trocada
+function senhaDaCasaMudou() {
+  pararEscuta();
+  var casa = S.casa;
+  IDB.del(S.user.uid + ':' + casa).then(function () { return db.ref('casas/' + casa).once('value'); }).then(function (snap) {
+    S.meta = snap.val() || S.meta; S.chave = null; S.raw = {}; S.cfg = null;
+    mostrarEntrada('card-unlock');
+    $('ul-erro').textContent = 'A senha da casa foi trocada. Digite a senha nova (peça para quem criou a casa).';
+  }, function () { mostrarEntrada('card-unlock'); });
+}
 function abrirCat(id) {
   if (id === PARC) {
     abrirSheet('<h3>📦 Parcelados</h3><p style="color:#6b7280;font-size:13.5px">Categoria fixa: recebe automaticamente as compras parceladas. Defina o orçamento mensal para parcelas.</p>' +
@@ -1851,9 +1918,9 @@ function novoCodigo() {
 }
 function removerMembro(uid) {
   var p = S.perfis[uid] || {};
-  if (!confirm('Remover ' + (p.nome || 'este membro') + ' da casa? A pessoa perde o acesso aos dados.\n\nDica: depois, gere um novo código de convite.')) return;
+  if (!confirm('Remover ' + (p.nome || 'este membro') + ' da casa?\n\nDepois, troque a senha da casa: a pessoa conhece a senha atual e poderia voltar a ler os dados com ela.')) return;
   Promise.all([db.ref('casas/' + S.casa + '/membros/' + uid).remove(), db.ref('casas/' + S.casa + '/dados/perfis/' + uid).remove()])
-    .then(function () { mostrarToast('✅', 'Membro removido'); }, function () { mostrarToast('⚠️', 'Erro ao remover'); });
+    .then(function () { mostrarToast('✅', 'Membro removido. Agora troque a senha da casa.'); abrirTrocarSenha(); }, function () { mostrarToast('⚠️', 'Erro ao remover'); });
 }
 
 // Backup
@@ -1986,7 +2053,8 @@ function escutar() {
   rCfg.on('value', function (s) {
     var v = s.val();
     var p = v ? decifrar(S.chave, v) : Promise.resolve(null);
-    p.then(function (c) {
+    p.catch(function () { senhaDaCasaMudou(); return 'mudou'; }).then(function (c) {
+      if (c === 'mudou') return;
       var n = normalizarCfg(c || { cats: catsPadrao(), nome: 'Minha casa', moeda: 'CAD' });
       S.cfg = n.cfg;
       if (n.mudou || !c) salvarCfg();
@@ -2219,12 +2287,18 @@ function ligarEventos() {
   $('aj-copiar').onclick = function () { copiar(linkConvite()); };
   $('aj-compart').onclick = compartilharConvite;
   $('aj-novocod').onclick = novoCodigo;
+  if (!$('aj-trocarsenha') && $('aj-membros')) {
+    var bts = document.createElement('button'); bts.id = 'aj-trocarsenha'; bts.className = 'aj-btn aj-full'; bts.type = 'button';
+    bts.style.display = 'none'; bts.textContent = '🔑 Trocar senha da casa';
+    $('aj-membros').parentNode.insertBefore(bts, $('aj-membros').nextSibling);
+    bts.onclick = abrirTrocarSenha;
+  }
   $('aj-exp-json').onclick = exportarJSON;
   $('aj-exp-csv').onclick = exportarCSV;
   $('aj-imp').onclick = function () { $('inp-restaurar').click(); };
   $('aj-bloquear').onclick = bloquear;
 }
 
-if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__HV = { gravarLanc: gravarLanc, analisarSemana: analisarSemana, S: S, lerValor: lerValor, formatar: formatar, lancamentos: lancamentos, totaisPeriodo: totaisPeriodo };
+if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__HV = { gravarLanc: gravarLanc, analisarSemana: analisarSemana, S: S, lerValor: lerValor, formatar: formatar, lancamentos: lancamentos, totaisPeriodo: totaisPeriodo, abrirCasa: abrirCasa };
 iniciar();
 })();
