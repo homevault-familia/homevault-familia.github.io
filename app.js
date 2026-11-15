@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.19.0';
+var VERSAO = '2.21.0';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -915,7 +915,7 @@ function renderizarRelatorio() {
   var subTot = {};
   T.lista.forEach(function (l) { if (l.cat === PARC || !l.sub) return; var k = l.cat + '|' + l.sub; subTot[k] = (subTot[k] || 0) + l.valor; });
   var cats = '<div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Por Categoria</div>' +
-    todasCats().map(function (c) {
+    todasCats().filter(function (c) { return (T.tots[c.id] || 0) > 0; }).map(function (c) { // só categorias com gasto no período (14/11/2026)
       var g = T.tots[c.id] || 0, o = +c.orc || 0, pC = o > 0 ? Math.min(g / o * 100, 100) : 0, pTot = grand > 0 ? g / grand * 100 : 0;
       var corB = g > o && o > 0 ? '#f44336' : pC >= 80 ? '#ff9800' : c.cor, restC = o - g;
       var barra = o > 0 ? '<div class="orc-barra-fundo"><div class="orc-barra-fill" style="width:' + pC.toFixed(1) + '%;background:' + corB + '"></div></div>' +
@@ -980,6 +980,20 @@ function renderizarRelatorio() {
 // ═════════════════════════ POR CATEGORIA ═════════════════════════
 function renderizarRelcat() {
   var abas = COM_PARCELADOS ? todasCats().concat([{ id: '_planos', emoji: '📊', nome: 'Planos', cor: '#7c3aed' }]) : todasCats();
+  // Só aparecem as categorias com gasto no período escolhido (14/11/2026)
+  var perAbas = getPer('relcat');
+  if (perAbas) {
+    var comGasto = {}, todosL = lancamentos();
+    lancamentosPeriodo(todosL, perAbas).forEach(function (l) { comGasto[l.cat] = true; });
+    if (todosL.some(function (l) { return l.parcela; })) comGasto[PARC] = true;
+    abas = abas.filter(function (a) { return a.id === '_planos' || comGasto[a.id]; });
+    if (!abas.length || (abas.length === 1 && abas[0].id === '_planos' && S.rcCat !== '_planos')) {
+      $('relcat-tabs').innerHTML = abas.length ? '<button class="relcat-tab" data-rc="_planos">📊<br>Planos</button>' : '';
+      $('relcat-per-card').style.display = '';
+      $('corpo-relcat').innerHTML = '<div class="vazio">📭 Nenhum gasto neste período</div>';
+      return;
+    }
+  }
   if (!S.rcCat || !abas.some(function (a) { return a.id === S.rcCat; })) S.rcCat = abas[0].id;
   $('relcat-tabs').innerHTML = abas.map(function (a) {
     var on = a.id === S.rcCat;
@@ -1809,6 +1823,7 @@ function renderAjustes() {
       (souDono() && !eu ? '<button class="aj-btn perigo" data-remover="' + uid + '">Remover</button>' : '') + '</div>';
   }).join('');
   renderAdmin();
+  renderLimparTeste();
   $('aj-conta').textContent = 'Conectado como ' + (S.user.email || '') + '.';
   $('aj-versao').textContent = VERSAO;
 }
@@ -2034,6 +2049,25 @@ function mostrarAdmin() {
     db.ref('admin/codigoAcesso').set(c).then(function () { _adm.codigo = c; mostrarToast('🔑', 'Código novo: ' + c + '. O anterior não vale mais.', 5000); },
       function (e) { $('adm-erro').textContent = 'Não foi possível trocar o código (' + ((e && e.code) || e) + ').'; })
       .then(function () { bn.disabled = false; mostrarAdmin(); });
+  };
+}
+// ── Só no ambiente de teste (14/11/2026): apagar todos os lançamentos da casa ──
+// Escondido em produção pelo config.js (MINHACASA_AMBIENTE). Pede dois toques.
+var _limparConf = false;
+function renderLimparTeste() {
+  var box = $('aj-limpar-teste'); if (!box) return;
+  if (window.MINHACASA_AMBIENTE !== 'teste') { box.style.display = 'none'; return; }
+  box.style.display = '';
+  var n = Object.keys(S.raw).length, b = $('aj-limpar-btn');
+  b.disabled = !n;
+  b.textContent = !n ? 'Nenhum lançamento para apagar' : _limparConf ? 'Toque de novo para apagar ' + n + ' lançamento' + (n === 1 ? '' : 's') : 'Apagar todos os lançamentos (' + n + ')';
+  b.onclick = function () {
+    if (window.MINHACASA_AMBIENTE !== 'teste') return;
+    if (!_limparConf) { _limparConf = true; renderLimparTeste(); setTimeout(function () { if (_limparConf) { _limparConf = false; renderLimparTeste(); } }, 5000); return; }
+    _limparConf = false; b.disabled = true; b.textContent = 'Apagando…';
+    db.ref('casas/' + S.casa + '/dados/lanc').remove().then(function () {
+      S.raw = {}; mostrarToast('🗑️', n + ' lançamento' + (n === 1 ? '' : 's') + ' apagado' + (n === 1 ? '' : 's')); renderLogo();
+    }, function (e) { mostrarToast('⚠️', 'Erro ao apagar (' + ((e && e.code) || e) + ')'); renderLimparTeste(); });
   };
 }
 function copiar(txt) {
