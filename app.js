@@ -6,7 +6,7 @@
 (function () {
 'use strict';
 
-var VERSAO = '2.29.6';
+var VERSAO = '2.29.7';
 var PBKDF2_ITER = 310000;
 var VERIF_TEXTO = 'HOMEVAULT-OK';
 var PARC = 'parcelados';
@@ -189,6 +189,8 @@ function normalizarCfg(c) {
 // Ids só com letras, números, _ e -; cores só no formato #rrggbb; textos com tamanho máximo.
 var ID_OK = /^[A-Za-z0-9_-]{1,64}$/, COR_OK = /^#[0-9a-fA-F]{6}$/, DATA_OK = /^\d{4}-\d{2}-\d{2}$/;
 function txtCurto(v, max) { return String(v == null ? '' : v).slice(0, max); }
+// Subcategorias sempre em ordem alfabética, de A a Z, ignorando acentos e maiúsculas (17/11/2026)
+function ordenarSubs(arr) { return arr.slice().sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base', numeric: true }); }); }
 function limparCfg(c) {
   c.nome = txtCurto(c.nome || 'Minha casa', 60);
   if (!SIMB[c.moeda]) c.moeda = 'CAD';
@@ -198,7 +200,7 @@ function limparCfg(c) {
   c.cats = (Array.isArray(c.cats) ? c.cats : []).filter(function (x) { return x && ID_OK.test(x.id); }).map(function (x, i) {
     return { id: x.id, emoji: txtCurto(x.emoji || '📦', 8), nome: txtCurto(x.nome || 'Categoria', 40),
       cor: COR_OK.test(x.cor) ? x.cor : PALETA[i % PALETA.length], orc: isFinite(+x.orc) && +x.orc > 0 ? +x.orc : 0,
-      subs: (Array.isArray(x.subs) ? x.subs : []).filter(function (u) { return u && ID_OK.test(u.id); }).map(function (u) { return { id: u.id, nome: txtCurto(u.nome || 'Sub', 40) }; }) };
+      subs: ordenarSubs((Array.isArray(x.subs) ? x.subs : []).filter(function (u) { return u && ID_OK.test(u.id); }).map(function (u) { return { id: u.id, nome: txtCurto(u.nome || 'Sub', 40) }; })) };
   });
   return c;
 }
@@ -2386,7 +2388,7 @@ function salvarCat() {
   delete c.orcAntes;
   var pend = $('ed-novasub').value.trim();
   if (pend) c.subs.push({ id: rid(8), nome: pend });
-  c.subs = c.subs.map(function (s) { return { id: s.id, nome: s.nome.trim() }; }).filter(function (s) { return s.nome; });
+  c.subs = ordenarSubs(c.subs.map(function (s) { return { id: s.id, nome: s.nome.trim() }; }).filter(function (s) { return s.nome; }));
   var nova = c.nova; delete c.nova;
   if (nova) S.cfg.cats.push(c);
   else S.cfg.cats = S.cfg.cats.map(function (x) { return x.id === c.id ? c : x; });
