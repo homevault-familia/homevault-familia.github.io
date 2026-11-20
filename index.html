@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="app-version" content="2.31.3">
+<meta name="app-version" content="2.33.1">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MinhaCasa">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png">
-<title>MinhaCasa</title>
+<link rel="icon" href="icon.svg?v=2" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=2">
+<title>MinhaCasa™</title>
 <style>
 /* ── LOADING SCREEN ── */
 #app-loading {
@@ -31,11 +31,29 @@
   display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
 }
 #tela-login.ativa { display: flex; }
+.idioma-sel { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); margin-bottom: 14px; }
+.idioma-sel button { font: inherit; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.85); background: transparent; border: 0; border-radius: 999px; padding: 8px 14px; min-height: 36px; cursor: pointer; }
+.idioma-sel button[aria-pressed="true"] { background: #fff; color: #1e3a8a; }
+.idioma-sel .ic-glb { display: inline-flex; align-items: center; padding: 0 6px 0 8px; color: rgba(255,255,255,.85); }
+.idioma-sel .ic-glb svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+.ed-tr { margin-top: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 10px 12px; background: #f9fafb; }
+.ed-tr summary { cursor: pointer; font-size: 14px; font-weight: 700; color: #1f2937; min-height: 32px; display: flex; align-items: center; gap: 6px; list-style: none; }
+.ed-tr summary::-webkit-details-marker { display: none; }
+.ed-tr summary::after { content: '▾'; margin-left: auto; color: #6b7280; }
+.ed-tr[open] summary::after { content: '▴'; }
+.ed-tr-dica { font-size: 12.5px; color: #6b7280; line-height: 1.4; margin: 4px 0 6px; }
+.ed-tr-linha { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); gap: 8px; align-items: center; margin-top: 8px; }
+.ed-tr-orig { font-size: 13px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-tr-linha .aj-input { margin: 0; }
+.aj-idiomas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.aj-idiomas button { font: inherit; font-size: 14px; font-weight: 700; padding: 12px 6px; min-height: 46px; border-radius: 12px; border: 1.5px solid #e5e7eb; background: #fff; color: #374151; cursor: pointer; }
+.aj-idiomas button[aria-pressed="true"] { border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8; }
 .login-card {
   background: #fff; border-radius: 20px; padding: 32px 28px;
   width: 100%; max-width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
 }
 .login-logo { text-align: center; font-size: 52px; margin-bottom: 6px; }
+.tm { font-size: .5em; font-weight: 600; vertical-align: super; line-height: 0; margin-left: 1px; }
 .login-title { text-align: center; font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 2px; }
 .login-sub { text-align: center; font-size: 13px; color: #6b7280; margin-bottom: 28px; }
 .login-campo { margin-bottom: 16px; }
@@ -989,21 +1007,22 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 </head>
 <body>
 
-<div id="app-loading"><div class="ld-icon"><img src="icon.svg" alt="" class="brand-logo"></div><div class="ld-txt" id="ld-txt">Carregando…</div></div>
+<div id="app-loading"><div class="ld-icon"><img src="icon.svg?v=2" alt="" class="brand-logo"></div><div class="ld-txt" id="ld-txt">Carregando…</div></div>
 
 <!-- ════════ ENTRADA: login, casa, desbloqueio ════════ -->
 <div id="tela-login">
+  <div class="idioma-sel" id="idioma-login" role="group" aria-label="Idioma · Language · Langue" data-i18n-nao><span class="ic-glb" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><button type="button" data-idioma="pt" lang="pt-BR">PT</button><button type="button" data-idioma="en" lang="en">EN</button><button type="button" data-idioma="fr" lang="fr">FR</button></div>
   <!-- Configuração pendente -->
   <div class="login-card" id="card-semconfig" style="display:none">
-    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
-    <div class="login-title">MinhaCasa</div>
+    <div class="login-logo"><img src="icon.svg?v=2" alt="MinhaCasa" class="brand-logo"></div>
+    <div class="login-title">MinhaCasa<sup class="tm">™</sup></div>
     <div class="login-sub">Configuração pendente: preencha o arquivo config.js com os dados do Firebase (veja o README).</div>
   </div>
 
   <!-- Login / cadastro -->
   <div class="login-card" id="card-auth" style="display:none">
-    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
-    <div class="login-title">MinhaCasa</div>
+    <div class="login-logo"><img src="icon.svg?v=2" alt="MinhaCasa" class="brand-logo"></div>
+    <div class="login-title">MinhaCasa<sup class="tm">™</sup></div>
     <div class="login-sub">Finanças da casa, privadas e criptografadas</div>
     <div class="hv-tabs"><button id="tab-entrar" class="on">Entrar</button><button id="tab-criar">Criar conta</button></div>
     <div class="login-campo" id="campo-nome" style="display:none">
@@ -1025,7 +1044,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
   <!-- Criar casa / convite -->
   <div class="login-card" id="card-casa" style="display:none">
-    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
+    <div class="login-logo"><img src="icon.svg?v=2" alt="MinhaCasa" class="brand-logo"></div>
     <div class="login-title">Sua casa</div>
     <div class="login-sub">A "casa" guarda os lançamentos. Quem mora junto usa a mesma casa e a mesma senha da casa.</div>
     <div class="hv-tabs"><button id="tab-nova" class="on">Criar casa</button><button id="tab-convite">Tenho convite</button></div>
@@ -1054,7 +1073,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 
   <!-- Desbloquear -->
   <div class="login-card" id="card-unlock" style="display:none">
-    <div class="login-logo"><img src="icon.svg" alt="MinhaCasa" class="brand-logo"></div>
+    <div class="login-logo"><img src="icon.svg?v=2" alt="MinhaCasa" class="brand-logo"></div>
     <div class="login-title">Desbloquear</div>
     <div class="login-sub">Digite a senha da casa para abrir os dados neste aparelho.</div>
     <div class="login-campo"><label for="ul-senha">Senha da casa</label><input id="ul-senha" type="password" autocomplete="off"></div>
@@ -1072,7 +1091,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 <div class="tela" id="tela-inicio">
   <div class="topo">
     <div class="topo-bar">
-      <div class="topo-title"><img src="icon.svg" alt="" class="topo-logo"><span id="txt-casa">MinhaCasa</span></div>
+      <div class="topo-title"><img src="icon.svg?v=2" alt="" class="topo-logo"><span id="txt-casa">MinhaCasa</span></div>
       <div class="topo-bar-right">
         <div id="sync-status" style="font-size:11px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px">
           <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block"></span>
@@ -1374,6 +1393,12 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <button class="aj-btn pri aj-full" id="aj-salvar">Salvar</button>
     </div>
 
+    <div class="aj-sec">🌐 Idioma</div>
+    <div class="card">
+      <div class="aj-idiomas" id="aj-idiomas" role="group" aria-label="Idioma" data-i18n-nao><button type="button" data-idioma="pt" lang="pt-BR">Português</button><button type="button" data-idioma="en" lang="en">English</button><button type="button" data-idioma="fr" lang="fr">Français</button></div>
+      <div style="font-size:12.5px;color:#6b7280;margin-top:8px">O idioma vale só para você. Cada pessoa da casa escolhe o seu.</div>
+    </div>
+
     <div class="aj-sec">Categorias e orçamentos</div>
     <div class="card" id="aj-cats"></div>
     <button class="aj-btn aj-full" id="aj-novacat" style="margin-top:0">+ Nova categoria</button>
@@ -1441,7 +1466,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <button class="aj-btn perigo aj-full" data-acao="sair"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Sair da conta</button>
     </div>
     <button class="aj-btn aj-full" id="aj-novidades" style="margin-top:14px">🔔 Novidades do app</button>
-    <div style="text-align:center;font-size:11px;color:#6b7280;margin:14px 0">MinhaCasa <span id="aj-versao"></span></div>
+    <div style="text-align:center;font-size:11px;color:#6b7280;margin:14px 0">MinhaCasa<sup class="tm">™</sup> <span id="aj-versao"></span></div>
   </div>
 </div>
 <input type="file" id="inp-restaurar" accept=".json,application/json" style="display:none">
@@ -1461,6 +1486,9 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="i18n.js"></script>
+<script src="i18n-en.js"></script>
+<script src="i18n-fr.js"></script>
 <script src="banco.js"></script>
 <script src="app.js"></script>
 </body>
