@@ -1254,5 +1254,14 @@ MCI18N.add('fr', {
  "Erro ao salvar. Tente de novo.": "Erreur d’enregistrement. Réessayez.",
  "🔤 Nomes de lojas": "🔤 Noms de magasins",
  "Junta o mesmo nome escrito de jeitos diferentes (ex.: <b>Walmart</b>, <b>walmart</b> e <b>Wal Mart</b>) nos lançamentos antigos. Você escolhe a grafia certa.": "Fusionne un même nom écrit de façons différentes (ex. : <b>Walmart</b>, <b>walmart</b> et <b>Wal Mart</b>) dans les transactions passées. Vous choisissez la bonne orthographe.",
- "Juntar nomes iguais": "Fusionner les noms identiques"
+ "Juntar nomes iguais": "Fusionner les noms identiques",
+ "Esta casa está suspensa: o app está só para consulta.": "Ce foyer est suspendu : l’application est en consultation seulement.",
+ "A assinatura venceu: o app está só para consulta até renovar.": "L’abonnement est expiré : l’application est en consultation seulement jusqu’au renouvellement.",
+ "Esta casa está suspensa. Você pode consultar tudo, mas não pode lançar nem alterar.": "Ce foyer est suspendu. Vous pouvez tout consulter, mais vous ne pouvez rien ajouter ni modifier.",
+ "A assinatura venceu em {d}. Você pode consultar tudo, mas não pode lançar nem alterar até renovar.": "L’abonnement a expiré le {d}. Vous pouvez tout consulter, mais vous ne pouvez rien ajouter ni modifier avant le renouvellement.",
+ "A assinatura vence hoje.": "L’abonnement expire aujourd’hui.",
+ "A assinatura vence em {n} dias.": "L’abonnement expire dans {n} jours.",
+ "A casa está demorando para abrir. Mande um print desta caixa para o suporte.": "Le foyer met du temps à s’ouvrir. Envoyez une capture de cette boîte au soutien.",
+ "Tentar de novo": "Réessayer",
+ "Da última vez o app não terminou de abrir. Mande um print desta caixa para o suporte.": "La dernière fois, l’application n’a pas fini de s’ouvrir. Envoyez une capture de cette boîte au soutien."
 });
