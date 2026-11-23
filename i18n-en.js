@@ -1308,5 +1308,10 @@ MCI18N.add('en', {
  "Este extrato é do cartão:": "This statement is for card:",
  "no app em {c}: {d}": "in the app on {c}: {d}",
  "Corrigir cartão": "Fix card",
- "Cartão corrigido para {c}": "Card changed to {c}"
+ "Cartão corrigido para {c}": "Card changed to {c}",
+ "Banco ou apelido": "Bank or nickname",
+ "Banco ou apelido (opcional)": "Bank or nickname (optional)",
+ "Ex.: CIBC, Cartão da Kate": "E.g. CIBC, Kate’s card",
+ "Dinheiro": "Cash",
+ "<div style=\"font-size:12.5px;color:#6b7280;line-height:1.45;margin-bottom:6px\">💡 Usa cartão de <b>débito</b>? Cadastre como um cartão (ex.: <b>Débito · CIBC</b>). Assim dá para conferir com o extrato da conta.</div>": "<div style=\"font-size:12.5px;color:#6b7280;line-height:1.45;margin-bottom:6px\">💡 Use a <b>debit</b> card? Add it as a card (e.g. <b>Debit · CIBC</b>). That way you can check it against your account statement.</div>"
 });
