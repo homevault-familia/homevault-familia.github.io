@@ -26,7 +26,7 @@ var T = I18N.T;
 })();
 I18N.traduzirPagina(document.body);
 
-var VERSAO = '2.35.19';
+var VERSAO = '2.35.23';
 // Ao mudar a VERSAO com algo que o usuário percebe, acrescente uma entrada NO TOPO de NOVIDADES (20/11/2026).
 var NOVIDADES = [
   { v: '2.35.0', d: '23/11/2026', itens: [
@@ -771,22 +771,67 @@ function renderizar() {
       corpo + '</div>';
   }).join('');
 
-  renderizarPizza(TT.tots, TT.comum);
+  renderizarPizza(TT, p);
   renderizarBarras(TT, p);
   renderizarRecentes(TT.todos);
   pintarCartaoSemana();
   if (!$('topo-config').classList.contains('editando')) preencherConfig();
 }
 
-function renderizarPizza(tots, total) {
-  $('pizza-wrap').innerHTML = '<div class="pizza-legenda">' + todasCats().map(function (c) {
+// Distribuição por categoria em sanfona (24/11/2026): barrinha do orçamento em cada linha; tocar abre o detalhe da categoria
+function renderizarPizza(TT, p) {
+  var tots = TT.tots, total = TT.comum, hj = hoje(), el = $('pizza-wrap');
+  var faltam = hj >= p.inicio && hj <= p.fim ? diasEntre(hj, p.fim) + 1 : 0;
+  var linhas = todasCats().map(function (c) {
     var v = tots[c.id] || 0, orc = +c.orc || 0;
-    var pct = orc > 0 ? (v / orc * 100).toFixed(0) : (total > 0 ? (v / total * 100).toFixed(0) : 0);
-    var cor = v > orc && orc > 0 ? '#f44336' : v < 0 ? '#16a34a' : c.cor;
-    return '<div class="pizza-item"><div class="pizza-cor" style="background:' + cor + '"></div>' +
-      '<div class="pizza-txt">' + esc(nomeVis(c)) + ' <span style="color:#6b7280;font-size:11px">(' + (v < 0 ? T('devolução') : pct + '% ' + (orc > 0 ? T('do orç.') : T('do total'))) + ')</span></div>' +
-      '<div class="pizza-val" style="color:' + cor + '">' + formatar(v) + '</div></div>';
+    return { c: c, v: v, orc: orc, pct: orc > 0 ? v / orc * 100 : -1 };
+  }).sort(function (a, b) { return a.pct !== b.pct ? b.pct - a.pct : b.v - a.v; }); // mais perto de estourar primeiro; sem orçamento no fim
+  var maxSem = Math.max.apply(null, linhas.map(function (l) { return l.orc > 0 ? 0 : l.v; }).concat([1]));
+  el.innerHTML = '<div class="dc-lista">' + linhas.map(function (L) {
+    var c = L.c, v = L.v, cor, larg, rot;
+    if (L.orc > 0) { cor = v > L.orc ? '#dc2626' : L.pct >= 80 ? '#f59e0b' : '#16a34a'; larg = Math.max(0, Math.min(100, L.pct)); rot = Math.round(L.pct) + '%'; }
+    else { cor = '#94a3b8'; larg = Math.max(0, v / maxSem * 100); rot = v < 0 ? T('devolução') : (total > 0 ? Math.round(v / total * 100) : 0) + '% ' + T('do total'); }
+    var aberta = S.dcAberta === c.id;
+    return '<div class="dc-item' + (aberta ? ' aberta' : '') + '" data-dc="' + esc(c.id) + '">' +
+      '<button type="button" class="dc-cab" aria-expanded="' + aberta + '">' +
+        '<span class="dc-ic" style="background:' + alfa(c.cor, '22') + '">' + esc(c.emoji || '•') + '</span>' +
+        '<span class="dc-meio"><span class="dc-l1"><span class="dc-nome">' + esc(nomeVis(c)) + '</span><span class="dc-val' + (L.orc > 0 && v > L.orc ? ' ruim' : '') + '">' + formatar(v) + '</span></span>' +
+        '<span class="dc-barra"><span style="width:' + larg.toFixed(1) + '%;background:' + cor + '"></span></span>' +
+        '<span class="dc-l2"><span class="dc-pct">' + (L.orc > 0 ? T('{p}% de {v}', { p: Math.round(L.pct), v: semCent(L.orc) }) : rot) + '</span>' +
+          (L.orc > 0 ? (v > L.orc ? '<span class="dc-disp ruim">' + T('Passou {v}', { v: semCent(v - L.orc) }) + '</span>' : '<span class="dc-disp">' + T('Disponível') + ' ' + semCent(L.orc - v) + '</span>') : '<span>' + T('Sem orçamento') + '</span>') + '</span></span>' +
+        '<span class="dobra-chev" aria-hidden="true"></span>' +
+      '</button>' + (aberta ? detalheDC(TT, c, L, faltam) : '') + '</div>';
   }).join('') + '</div>';
+  el.onclick = function (ev) {
+    var t = ev.target, ver = t.closest && t.closest('[data-dc-ver]');
+    if (ver) { irParaCategoria(ver.getAttribute('data-dc-ver')); return; }
+    var cab = t.closest && t.closest('.dc-cab'); if (!cab) return;
+    var id = cab.parentNode.getAttribute('data-dc');
+    S.dcAberta = S.dcAberta === id ? null : id; // só uma aberta por vez
+    renderizarPizza(TT, p);
+  };
+}
+function semCent(v) { return formatar(v).replace(/[.,]00(?=\D*$)/, ''); } // CA$ 1,200.00 → CA$ 1,200 (só quando os centavos são zero)
+function detalheDC(TT, c, L, faltam) {
+  var doCat = TT.lista.filter(function (l) { return l.cat === c.id; }), h = '<div class="dc-det">';
+  var nL = TT.qtds[c.id] || 0;
+  if (L.orc > 0) {
+    var sobra = L.orc - L.v;
+    h += '<div class="dc-sobra ' + (sobra < 0 ? 'ruim' : '') + '">' + (sobra < 0 ? T('Passou {v} do orçamento', { v: formatar(-sobra) }) :
+      T('Sobram {v}', { v: formatar(sobra) }) + (faltam > 0 ? ' · ' + T('{v} por dia nos {n} dias que faltam', { v: formatar(sobra / faltam), n: faltam }) : '')) + '</div>';
+  }
+  var subs = {}; doCat.forEach(function (l) { var k = l.sub || ''; subs[k] = (subs[k] || 0) + l.valor; });
+  var ks = Object.keys(subs).filter(function (k) { return Math.abs(subs[k]) >= 0.005; }).sort(function (a, b) { return subs[b] - subs[a]; });
+  if (ks.length && !(ks.length === 1 && ks[0] === '')) {
+    h += '<div class="dc-tit">' + T('Subcategorias') + '</div>' + ks.map(function (k) {
+      return '<div class="dc-lin"><span>' + esc(k ? (nomeSub(c.id, k) || T('Outros')) : T('Sem subcategoria')) + '</span><b>' + formatar(subs[k]) + '</b></div>';
+    }).join('');
+  }
+  var ult = doCat.slice().sort(function (a, b) { return a.data !== b.data ? (a.data < b.data ? 1 : -1) : b.ts - a.ts; }).slice(0, 3);
+  h += '<div class="dc-tit">' + T('Últimos lançamentos') + ' · ' + (nL === 1 ? T('1 no período') : T('{n} no período', { n: nL })) + '</div>' + (ult.length ? ult.map(function (l) {
+    return '<div class="dc-lin"><span><span class="dc-dt">' + diaMes(l.data) + '</span> ' + esc(descLanc(l)) + '</span><b' + (l.valor < 0 ? ' style="color:#16a34a"' : '') + '>' + formatar(l.valor) + '</b></div>';
+  }).join('') : '<div class="dc-lin"><span style="color:#9ca3af">' + T('Nenhum lançamento no período') + '</span></div>');
+  return h + '<button type="button" class="dc-ver" data-dc-ver="' + esc(c.id) + '">' + T('Ver todos da categoria') + ' ›</button></div>';
 }
 
 function renderizarBarras(TT, p) {
@@ -1356,8 +1401,7 @@ function renderizarHistorico() {
   var lista = listaHistorico(per);
   var filtro = '';
   if (usaCartoes()) {
-    var op = [{ id: '', nome: T('Todos') }].concat(opcoesCartao().map(function (c) { return { id: c.id, nome: nomeCartao(c.id, true) }; })).concat([{ id: '_sem', nome: T('Sem cartão') }]);
-    filtro = '<div class="ct-filtro">' + op.map(function (o) { return '<button type="button" class="ct-fb' + ((S.histCartao || '') === o.id ? ' on' : '') + '" data-histct="' + o.id + '">' + esc(o.nome) + '</button>'; }).join('') + '</div>';
+    filtro = cartoesFiltroHist(per);
   }
   if (!lista.length) { el.innerHTML = filtro + T('<div class="vazio">📭 Sem lançamentos neste período</div>'); ligarFiltroHist(); return; }
   var pm = buildPagasMap(lancamentos()), porDia = {}, dm = devolvidoPorCompra();
@@ -1371,7 +1415,29 @@ function renderizarHistorico() {
     }).join('');
   if (filtro) { el.innerHTML = filtro + el.innerHTML; ligarFiltroHist(); }
 }
-function ligarFiltroHist() { qsa('[data-histct]').forEach(function (b) { b.onclick = function () { S.histCartao = b.dataset.histct || null; renderizarHistorico(); }; }); }
+// Filtro do Histórico em formato de cartão de crédito (24/11/2026): cor que a casa escolheu, chip, nome, banco e o total do período
+function cartoesFiltroHist(per) {
+  var todos = lancamentosPeriodo(lancamentos(), per).filter(function (l) { return l.cat !== PARC; }), tot = { '': 0, _sem: 0 };
+  todos.forEach(function (l) { var k = cartaoPorId(l.cartao) ? l.cartao : '_sem'; tot[k] = (tot[k] || 0) + l.valor; tot[''] += l.valor; });
+  var op = [{ id: '', nome: T('Todos'), cor: '#1f2937', tipo: 'todos' }]
+    .concat(opcoesCartao().map(function (c) { return { id: c.id, nome: c.nome, banco: c.banco, cor: c.cor || '#334155', tipo: c.din ? 'din' : 'ct' }; }))
+    .concat(tot._sem ? [{ id: '_sem', nome: T('Sem cartão'), cor: '', tipo: 'sem' }] : []);
+  return '<div class="cc-fila">' + op.map(function (o) {
+    var on = (S.histCartao || '') === o.id, claro = o.cor && corClara(o.cor);
+    var topo = o.tipo === 'ct' ? '<span class="cc-banco">' + esc(o.banco || '') + '</span><svg class="cc-nfc" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a10 10 0 0 1 0 14M5 10a2.5 2.5 0 0 1 0 4"/></svg>' :
+      o.tipo === 'din' ? '<span class="cc-banco">' + T('Dinheiro') + '</span><span class="cc-emo">💵</span>' :
+      o.tipo === 'todos' ? '<span class="cc-banco">' + T('Todos os cartões') + '</span>' : '<span class="cc-banco">' + T('Sem cartão') + '</span>';
+    var meio = o.tipo === 'ct' ? '<span class="cc-chip"></span>' : o.tipo === 'todos' ? '<span class="cc-pilha"><i></i><i></i><i></i></span>' : '<span class="cc-chip" style="visibility:hidden"></span>';
+    return '<button type="button" class="cc cc-' + o.tipo + (on ? ' on' : '') + (claro ? ' claro' : '') + '" data-histct="' + o.id + '" aria-pressed="' + on + '"' + (o.cor ? ' style="background:' + o.cor + '"' : '') + '>' +
+      '<span class="cc-topo">' + topo + '</span>' + meio +
+      '<span class="cc-nome">' + esc(o.tipo === 'ct' || o.tipo === 'din' ? o.nome : '') + '</span>' +
+      '<span class="cc-val">' + semCent(tot[o.id] || 0) + '</span></button>';
+  }).join('') + '</div>';
+}
+function corClara(hex) { var m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return false; var n = parseInt(m[1], 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) > 170; }
+function ligarFiltroHist() {
+  var on = document.querySelector('.cc.on'), fila = on && on.parentNode; if (fila) fila.scrollLeft = Math.max(0, on.offsetLeft - fila.offsetLeft - (fila.clientWidth - on.offsetWidth) / 2); // cartão escolhido sempre à vista
+  qsa('[data-histct]').forEach(function (b) { b.onclick = function () { S.histCartao = b.dataset.histct || null; renderizarHistorico(); }; }); }
 function compartilharTexto(msg) {
   if (navigator.share) navigator.share({ text: msg }).catch(function () {});
   else window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
