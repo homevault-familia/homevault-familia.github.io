@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="app-version" content="2.35.7">
+<meta name="app-version" content="2.35.13">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -299,6 +299,14 @@ body {
   margin-bottom: 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
 }
+details.dobra > summary, .dobra-rel > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; -webkit-tap-highlight-color: transparent; }
+details.dobra > summary::-webkit-details-marker, .dobra-rel > summary::-webkit-details-marker { display: none; }
+details.dobra:not([open]) > summary { margin-bottom: 0; }
+.dobra-chev { width: 9px; height: 9px; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; transform: rotate(45deg); margin: -4px 4px 0 10px; transition: transform .2s; flex-shrink: 0; }
+details[open] > summary .dobra-chev { transform: rotate(-135deg); margin-top: 4px; }
+.dobra-rel { background: #fff; border-radius: 16px; padding: 14px 16px; margin: 12px 0 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.dobra-rel > summary { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
+.dobra-rel[open] > summary { margin-bottom: 10px; }
 .card-titulo { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
 
 /* ── BARRA ORÇAMENTO RELATÓRIO ── */
@@ -306,6 +314,16 @@ body {
 .orc-barra-fill { height: 100%; border-radius: 4px; transition: width .4s; }
 
 /* ── GRÁFICO BARRAS ── */
+.gd-sts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.gd-st-rot { font-size: 11px; color: #6b7280; }
+.gd-st-val { font-size: 17px; font-weight: 800; color: #111827; margin-top: 1px; }
+.gd-tip { font-size: 12px; color: #6b7280; background: #f8fafc; border-radius: 10px; padding: 7px 10px; margin-bottom: 6px; min-height: 18px; line-height: 1.35; }
+.gd-tip.ativo { color: #1f2937; background: #eff6ff; }
+.gd-svg { display: block; touch-action: manipulation; }
+.gd-svg rect { cursor: pointer; transition: opacity .15s; }
+.gd-x { font-size: 10px; fill: #9ca3af; font-weight: 600; }
+.gd-x-hoje { fill: #1d4ed8; font-weight: 800; }
+.gd-ref { font-size: 10px; fill: #16a34a; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
 .chart-wrap { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .chart-wrap::-webkit-scrollbar { display: none; }
 .chart-inner { display: inline-flex; gap: 0; min-width: 100%; }
@@ -876,6 +894,9 @@ body {
 .cfg-action-btn { min-width: calc(33% - 6px); }
 .lanc-autor { font-size:10px; color:#6b7280; }
 /* Ajustes */
+.aj-dobra > summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; background:#fff; border-radius:14px; padding:14px 16px; margin:12px 0 8px; box-shadow:0 1px 3px rgba(0,0,0,.06); -webkit-tap-highlight-color:transparent; }
+.aj-dobra > summary::-webkit-details-marker { display:none; }
+.aj-dobra[open] > summary { margin-bottom:8px; }
 .aj-sec { font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:1px; margin:16px 2px 8px; }
 .aj-linha { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid #f3f4f6; }
 .aj-linha:last-child { border-bottom:0; }
@@ -1192,7 +1213,7 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
     <div class="grid-cat" id="grid-cat"></div>
     <div class="card"><div class="card-titulo">Distribuição por Categoria</div><div class="pizza-wrap" id="pizza-wrap"></div></div>
     <div class="card"><div class="card-titulo">Gastos por Dia no Período</div><div class="barras" id="barras-div"></div></div>
-    <div class="card"><div class="card-titulo">Últimos Lançamentos</div><div id="lista-recentes"></div></div>
+    <details class="card dobra" id="ult-lanc"><summary class="card-titulo">Últimos Lançamentos<span class="dobra-chev" aria-hidden="true"></span></summary><div id="lista-recentes"></div></details>
   </div>
 </div>
 
@@ -1439,23 +1460,26 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
       <div style="font-size:12.5px;color:#6b7280;margin-top:8px">O idioma vale só para você. Cada pessoa da casa escolhe o seu.</div>
     </div>
 
-    <div class="aj-sec">Categorias e orçamentos</div>
+    <details class="aj-dobra" id="ajd-cats"><summary class="aj-sec">Categorias e orçamentos<span class="dobra-chev" aria-hidden="true"></span></summary>
     <div class="card" id="aj-cats"></div>
     <button class="aj-btn aj-full" id="aj-novacat" style="margin-top:0">+ Nova categoria</button>
+    </details>
 
-    <div class="aj-sec">Convidar alguém da casa</div>
+    <details class="aj-dobra" id="ajd-convidar"><summary class="aj-sec">Convidar alguém da casa<span class="dobra-chev" aria-hidden="true"></span></summary>
     <div class="card">
       <div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Envie o código abaixo e, <b>separadamente</b> (de preferência pessoalmente ou por ligação), a senha da casa.</div>
       <div class="codigo" id="aj-codigo"></div>
       <div style="display:flex;gap:8px;margin-top:10px"><button class="aj-btn" style="flex:1" id="aj-copiar">Copiar código</button><button class="aj-btn" style="flex:1" id="aj-compart">Compartilhar</button></div>
       <button class="aj-btn aj-full" id="aj-novocod" style="display:none">Gerar novo código (o anterior deixa de valer)</button>
     </div>
+    </details>
 
     <div class="aj-sec">Membros</div>
     <div class="card" id="aj-membros"></div>
 
-    <div class="aj-sec">💳 Cartões</div>
+    <details class="aj-dobra" id="ajd-cartoes"><summary class="aj-sec">💳 Cartões<span class="dobra-chev" aria-hidden="true"></span></summary>
     <div class="card" id="aj-cartoes"></div>
+    </details>
 
     <div class="aj-sec">🏦 Conferir com o banco</div>
     <div class="card">

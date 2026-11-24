@@ -1314,5 +1314,17 @@ MCI18N.add('en', {
  "Ex.: CIBC, Cartão da Kate": "E.g. CIBC, Kate’s card",
  "Dinheiro": "Cash",
  "<div style=\"font-size:12.5px;color:#6b7280;line-height:1.45;margin-bottom:6px\">💡 Usa cartão de <b>débito</b>? Cadastre como um cartão (ex.: <b>Débito · CIBC</b>). Assim dá para conferir com o extrato da conta.</div>": "<div style=\"font-size:12.5px;color:#6b7280;line-height:1.45;margin-bottom:6px\">💡 Use a <b>debit</b> card? Add it as a card (e.g. <b>Debit · CIBC</b>). That way you can check it against your account statement.</div>",
- "A casa está demorando para abrir. Confira a internet e toque em Tentar de novo.": "Your household is taking a while to open. Check your internet connection and tap Try again."
+ "A casa está demorando para abrir. Confira a internet e toque em Tentar de novo.": "Your household is taking a while to open. Check your internet connection and tap Try again.",
+ "Por Categoria": "By category",
+ "💳 Por cartão": "💳 By card",
+ "Top 5 Maiores Gastos": "Top 5 largest expenses",
+ "📅 Semana a Semana": "📅 Week by week",
+ "Maior dia": "Biggest day",
+ "Pode gastar/dia": "Can spend/day",
+ "Orçamento/dia": "Budget/day",
+ "Dias c/ gasto": "Days with spending",
+ "Média por dia": "Daily average",
+ "/dia": "/day",
+ "Toque numa barra para ver o dia": "Tap a bar to see that day",
+ "sem gastos": "no spending"
 });
