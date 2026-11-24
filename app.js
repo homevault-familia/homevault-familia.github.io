@@ -26,7 +26,7 @@ var T = I18N.T;
 })();
 I18N.traduzirPagina(document.body);
 
-var VERSAO = '2.35.24';
+var VERSAO = '2.35.29';
 // Ao mudar a VERSAO com algo que o usuário percebe, acrescente uma entrada NO TOPO de NOVIDADES (20/11/2026).
 var NOVIDADES = [
   { v: '2.35.0', d: '23/11/2026', itens: [
@@ -1237,8 +1237,9 @@ function renderAdd() {
   var tiles = (editParc ? [catParc()] : catsComuns());
   $('add-cats').innerHTML = tiles.length ? tiles.map(function (c) {
     var on = c.id === a.cat;
-    return '<div class="cat-tile" data-addcat="' + c.id + '"' + (on ? ' style="border-color:' + c.cor + ';background:' + alfa(c.cor, '12') + ';box-shadow:0 0 0 3px ' + alfa(c.cor, '26') + '"' : '') + '>' +
-      '<div class="cat-tile-ic">' + esc(c.emoji) + '</div><div class="cat-tile-nm"' + (on ? ' style="color:' + c.cor + '"' : '') + '>' + esc(nomeVis(c)) + '</div></div>';
+    // fundo suave na cor da categoria (24/11/2026); a escolhida fica mais forte, com borda e anel
+    return '<div class="cat-tile" data-addcat="' + c.id + '" style="border-color:' + (on ? c.cor : alfa(c.cor, '38')) + ';background:linear-gradient(150deg,' + alfa(c.cor, on ? '1a' : '06') + ' 0%,' + alfa(c.cor, on ? '4d' : '2e') + ' 100%)' + (on ? ';box-shadow:0 0 0 3px ' + alfa(c.cor, '30') : '') + '">' +
+      '<div class="cat-tile-ic">' + esc(c.emoji) + '</div><div class="cat-tile-nm" style="color:' + (on ? c.cor : '#374151') + '">' + esc(nomeVis(c)) + '</div></div>';
   }).join('') : T('<div class="vazio">Nenhuma categoria. Crie em Ajustes.</div>');
   var cat = catPorId(a.cat);
   var hdr = $('add-header');
@@ -1258,6 +1259,11 @@ function renderAdd() {
     $('sub-step').style.background = cat.cor;
     $('sel-sub').innerHTML = T('<option value="">— Selecione —</option>') + ordenarVis(cat.subs).map(function (s) {
       return '<option value="' + s.id + '"' + (s.id === a.sub ? ' selected' : '') + '>' + esc(nomeVis(s)) + '</option>';
+    }).join('');
+    // subcategorias como botões, já abertos (24/11/2026): um toque escolhe; tocar de novo desmarca
+    $('sub-chips').innerHTML = ordenarVis(cat.subs).map(function (s) {
+      var on = s.id === a.sub;
+      return '<button type="button" class="sub-chip' + (on ? ' on' : '') + '" data-addsub="' + s.id + '" style="' + (on ? 'background:' + cat.cor + ';border-color:' + cat.cor + ';color:#fff' : 'border-color:' + alfa(cat.cor, '55') + ';background:' + alfa(cat.cor, '10')) + '">' + esc(nomeVis(s)) + '</button>';
     }).join('');
   } else $('grupo-sub').style.display = 'none';
 }
@@ -1398,10 +1404,12 @@ function renderizarHistorico() {
   $('label-hist').textContent = nomeMes(S.mesHist);
   var per = getPer('hist'), el = $('corpo-historico');
   if (!per) { el.innerHTML = T('<div class="vazio">Selecione as datas do período</div>'); return; }
+  // Com cartões (24/11/2026): primeiro só os cartões na tela; tocar num deles (ou em Todos) abre os lançamentos
+  if (usaCartoes() && S.histVista !== 'lista') { el.innerHTML = cartoesFiltroHist(per, true); ligarFiltroHist(); return; }
   var lista = listaHistorico(per);
   var filtro = '';
   if (usaCartoes()) {
-    filtro = cartoesFiltroHist(per);
+    filtro = '<button type="button" class="cc-voltar" id="cc-voltar"><span aria-hidden="true">‹</span> ' + T('Voltar aos cartões') + '</button>' + cartoesFiltroHist(per);
   }
   if (!lista.length) { el.innerHTML = filtro + T('<div class="vazio">📭 Sem lançamentos neste período</div>'); ligarFiltroHist(); return; }
   var pm = buildPagasMap(lancamentos()), porDia = {}, dm = devolvidoPorCompra();
@@ -1416,14 +1424,14 @@ function renderizarHistorico() {
   if (filtro) { el.innerHTML = filtro + el.innerHTML; ligarFiltroHist(); }
 }
 // Filtro do Histórico em formato de cartão de crédito (24/11/2026): cor que a casa escolheu, chip, nome, banco e o total do período
-function cartoesFiltroHist(per) {
-  var todos = lancamentosPeriodo(lancamentos(), per).filter(function (l) { return l.cat !== PARC; }), tot = { '': 0, _sem: 0 };
-  todos.forEach(function (l) { var k = cartaoPorId(l.cartao) ? l.cartao : '_sem'; tot[k] = (tot[k] || 0) + l.valor; tot[''] += l.valor; });
+function cartoesFiltroHist(per, grade) {
+  var todos = lancamentosPeriodo(lancamentos(), per).filter(function (l) { return l.cat !== PARC; }), tot = { '': 0, _sem: 0 }, qt = { '': 0 };
+  todos.forEach(function (l) { var k = cartaoPorId(l.cartao) ? l.cartao : '_sem'; tot[k] = (tot[k] || 0) + l.valor; tot[''] += l.valor; if (l.valor > 0) { qt[k] = (qt[k] || 0) + 1; qt['']++; } });
   var op = [{ id: '', nome: T('Todos'), cor: '#1f2937', tipo: 'todos' }]
     .concat(opcoesCartao().map(function (c) { return { id: c.id, nome: c.nome, banco: c.banco, cor: c.cor || '#334155', tipo: c.din ? 'din' : 'ct' }; }))
     .concat(tot._sem ? [{ id: '_sem', nome: T('Sem cartão'), cor: '', tipo: 'sem' }] : []);
-  return '<div class="cc-fila">' + op.map(function (o) {
-    var on = (S.histCartao || '') === o.id, claro = o.cor && corClara(o.cor);
+  return (grade ? '<div class="cc-dica">' + T('Toque num cartão para ver os lançamentos') + '</div>' : '') + '<div class="' + (grade ? 'cc-grade' : 'cc-fila') + '">' + op.map(function (o) {
+    var on = !grade && (S.histCartao || '') === o.id, claro = o.cor && corClara(o.cor);
     var topo = o.tipo === 'ct' ? '<span class="cc-banco">' + esc(o.banco || '') + '</span><svg class="cc-nfc" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a10 10 0 0 1 0 14M5 10a2.5 2.5 0 0 1 0 4"/></svg>' :
       o.tipo === 'din' ? '<span class="cc-banco">' + T('Dinheiro') + '</span><span class="cc-emo">💵</span>' :
       o.tipo === 'todos' ? '<span class="cc-banco">' + T('Todos os cartões') + '</span>' : '<span class="cc-banco">' + T('Sem cartão') + '</span>';
@@ -1431,13 +1439,18 @@ function cartoesFiltroHist(per) {
     return '<button type="button" class="cc cc-' + o.tipo + (on ? ' on' : '') + (claro ? ' claro' : '') + '" data-histct="' + o.id + '" aria-pressed="' + on + '"' + (o.cor ? ' style="background:' + o.cor + '"' : '') + '>' +
       '<span class="cc-topo">' + topo + '</span>' + meio +
       '<span class="cc-nome">' + esc(o.tipo === 'ct' || o.tipo === 'din' ? o.nome : '') + '</span>' +
-      '<span class="cc-val">' + semCent(tot[o.id] || 0) + '</span></button>';
+      '<span class="cc-val">' + semCent(tot[o.id] || 0) + (grade ? '<small>' + (qt[o.id] === 1 ? T('1 compra') : T('{n} compras', { n: qt[o.id] || 0 })) + '</small>' : '') + '</span></button>';
   }).join('') + '</div>';
 }
 function corClara(hex) { var m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return false; var n = parseInt(m[1], 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) > 170; }
 function ligarFiltroHist() {
   var on = document.querySelector('.cc.on'), fila = on && on.parentNode; if (fila) fila.scrollLeft = Math.max(0, on.offsetLeft - fila.offsetLeft - (fila.clientWidth - on.offsetWidth) / 2); // cartão escolhido sempre à vista
-  qsa('[data-histct]').forEach(function (b) { b.onclick = function () { S.histCartao = b.dataset.histct || null; renderizarHistorico(); }; }); }
+  qsa('[data-histct]').forEach(function (b) { b.onclick = function () {
+    var daGrade = S.histVista !== 'lista'; S.histCartao = b.dataset.histct || null; S.histVista = 'lista'; renderizarHistorico();
+    if (daGrade) try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  }; });
+  var v = $('cc-voltar'); if (v) v.onclick = function () { S.histVista = 'cartoes'; S.histCartao = null; renderizarHistorico(); };
+}
 function compartilharTexto(msg) {
   if (navigator.share) navigator.share({ text: msg }).catch(function () {});
   else window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
@@ -4109,10 +4122,18 @@ function ligarEventos() {
   $('ul-btn').onclick = desbloquear;
   $('ul-senha').onkeydown = function (e) { if (e.key === 'Enter') desbloquear(); };
 
+  // Histórico: tocar no fundo vazio (fora dos cartões, lançamentos e botões) volta para a tela dos cartões (24/11/2026)
+  document.addEventListener('click', function (e) {
+    if (S.tela !== 'historico' || !usaCartoes() || S.histVista !== 'lista') return;
+    var t = e.target;
+    if (t === document.body || t === document.documentElement || t.id === 'tela-historico' || t.id === 'corpo-historico' || (t.classList && (t.classList.contains('conteudo') || t.classList.contains('cc-fila')))) {
+      S.histVista = 'cartoes'; S.histCartao = null; renderizarHistorico();
+    }
+  });
   document.addEventListener('click', function (e) {
     var t = e.target, b;
     if ((b = t.closest('[data-acao="sair"]'))) { sair(); return; }
-    if ((b = t.closest('[data-ir]'))) { if (b.dataset.ir === 'add') S.add.editId = null; irPara(b.dataset.ir); return; }
+    if ((b = t.closest('[data-ir]'))) { if (b.dataset.ir === 'add') S.add.editId = null; if (b.dataset.ir === 'historico') { S.histVista = 'cartoes'; S.histCartao = null; } irPara(b.dataset.ir); return; }
     if ((b = t.closest('[data-editar]'))) { if (somenteLeitura()) { avisarSomenteLeitura(); return; } S.voltarPara = S.tela === 'add' ? 'inicio' : S.tela; editarLancamento(b.dataset.editar); return; }
     if ((b = t.closest('[data-excluir]'))) { excluir(b.dataset.excluir); return; }
     if ((b = t.closest('.card-cat[data-cat]'))) { irParaCategoria(b.dataset.cat); return; }
@@ -4121,7 +4142,12 @@ function ligarEventos() {
     if ((b = t.closest('[data-descsug]'))) { var ns = _descSug[+b.dataset.descsug]; if (ns) { $('inp-desc').value = ns; atualizarSugDesc(); } return; }
     if (t.closest('[data-origtrocar]')) { S.add.orig = null; $('inp-valor').value = ''; $('inp-desc').value = ''; renderOrig(); atualizarAvisoValor(); return; }
     if ((b = t.closest('[data-origem]'))) { if (S.add.orig !== b.dataset.origem) escolherOrig(b.dataset.origem); return; }
-    if ((b = t.closest('[data-addcat]'))) { if (S.add.cat !== b.dataset.addcat) S.add.sub = null; S.add.cat = b.dataset.addcat; renderAdd(); return; }
+    if ((b = t.closest('[data-addcat]'))) {
+      var trocou = S.add.cat !== b.dataset.addcat; if (trocou) S.add.sub = null; S.add.cat = b.dataset.addcat; renderAdd();
+      if (trocou && $('grupo-sub').style.display !== 'none') setTimeout(function () { $('grupo-sub').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60); // já mostra as subcategorias
+      return;
+    }
+    if ((b = t.closest('[data-addsub]'))) { S.add.sub = S.add.sub === b.dataset.addsub ? null : b.dataset.addsub; renderAdd(); return; }
     if ((b = t.closest('[data-per] .rel-per-btn'))) { setPer(b.parentNode.dataset.per, b.dataset.tipo); return; }
     if ((b = t.closest('[data-rc]'))) { S.rcCat = b.dataset.rc; renderizarRelcat(); return; }
     if ((b = t.closest('[data-cancelar-plano]'))) { cancelarPlano(b.dataset.cancelarPlano); return; }

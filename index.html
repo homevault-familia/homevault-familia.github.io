@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="app-version" content="2.35.24">
+<meta name="app-version" content="2.35.29">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -586,6 +586,9 @@ details[open] > summary .dobra-chev { transform: rotate(-135deg); margin-top: 4p
   justify-content: center; flex-shrink: 0; }
 
 .cat-grid-pro { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sub-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sub-chip { font: inherit; font-size: 14px; font-weight: 700; color: #1f2937; padding: 10px 14px; min-height: 42px; border-radius: 21px; border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer; transition: background .15s, color .15s; }
+.sub-chip.on { box-shadow: 0 2px 6px rgba(15,23,42,.15); }
 .cat-tile { border: 2px solid #e5e7eb; border-radius: 14px; padding: 18px 8px;
   text-align: center; cursor: pointer; background: #fafafa; transition: all .15s; }
 .cat-tile-ic { font-size: 28px; margin-bottom: 6px; }
@@ -637,6 +640,16 @@ details[open] > summary .dobra-chev { transform: rotate(-135deg); margin-top: 4p
 .ct-op { display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:14px; font-weight:700; padding:9px 13px; min-height:40px; border-radius:20px; border:1.5px solid #e5e7eb; background:#fff; color:#111827; cursor:pointer; }
 .ct-op.on { border-color:#1d4ed8; background:#eef2ff; color:#1d4ed8; }
 .ct-ap { background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:10px; padding:8px 10px; font-size:13px; line-height:1.4; margin-bottom:10px; }
+.cc-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 4px 0 12px; }
+.cc-grade .cc { width: auto; padding: 12px 13px; border-radius: 14px; }
+.cc-grade .cc-banco { font-size: 11px; }
+.cc-grade .cc-chip { width: 28px; height: 20px; border-radius: 5px; }
+.cc-grade .cc-nome { font-size: 14px; }
+.cc-grade .cc-val { font-size: 17px; }
+.cc-val small { display: block; font-size: 10.5px; font-weight: 700; opacity: .85; margin-top: 2px; letter-spacing: 0; }
+.cc-dica { font-size: 13px; font-weight: 600; color: #64748b; margin: 4px 2px 10px; }
+.cc-voltar { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 15px; font-weight: 800; color: #1d4ed8; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 22px; padding: 8px 16px 8px 12px; margin: 2px 0 6px; cursor: pointer; min-height: 44px; }
+.cc-voltar span { font-size: 22px; line-height: 1; margin-top: -2px; }
 .cc-fila { display: flex; gap: 10px; overflow-x: auto; padding: 7px 6px 12px; margin: 0 -6px; scroll-snap-type: x proximity; scrollbar-width: none; }
 .cc-fila::-webkit-scrollbar { display: none; }
 .cc { position: relative; flex-shrink: 0; width: 132px; aspect-ratio: 1.586; box-sizing: border-box; padding: 9px 10px; border-radius: 11px; border: 0; color: #fff; font: inherit; text-align: left; cursor: pointer; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-shadow: 0 2px 6px rgba(15,23,42,.18); transition: transform .15s, box-shadow .15s, opacity .15s; }
@@ -1299,7 +1312,8 @@ body.na-tela-add .add-sticky-footer { padding-bottom: calc(12px + env(safe-area-
     </div>
     <div class="add-card" id="grupo-sub" style="display:none">
       <div class="add-card-title"><span class="add-step-n" id="sub-step">↳</span><span id="sub-titulo">Subcategoria</span></div>
-      <select id="sel-sub" class="add-select"></select>
+      <div class="sub-chips" id="sub-chips"></div>
+      <select id="sel-sub" class="add-select" style="display:none" aria-hidden="true" tabindex="-1"></select>
     </div>
     <div class="add-card">
       <div class="add-card-title"><span class="add-step-n">2</span><span id="lbl-valor">Valor Gasto</span></div>
