@@ -180,7 +180,8 @@ window.iniciarMercado = function (F) {
       var jan = c.compras.filter(function (b) { return meses.indexOf(mesDe(b.data)) >= 0; });
       var ms = {}; jan.forEach(function (b) { ms[mesDe(b.data)] = 1; });
       var nMeses = Object.keys(ms).length;
-      var auto = meses.length < 2 ? nMeses >= 1 : nMeses >= 2;
+      // com menos de 3 meses de recibos, entra tudo o que foi comprado; depois, só o que aparece em 2 dos últimos 3 meses
+      var auto = meses.length < 3 ? nMeses >= 1 : nMeses >= 2;
       if (!auto && fixo !== true) return;
       var soma = jan.reduce(function (s, b) { return s + b.qtd; }, 0) / nm, peso = jan.some(function (b) { return b.qtd % 1; });
       var qtd = peso ? Math.max(0.1, Math.round(soma * 10) / 10) : Math.max(1, Math.round(soma));
@@ -254,7 +255,7 @@ window.iniciarMercado = function (F) {
     if (!L.length) return kpis() + cartaoIncluir() + '<div class="card"><h2>A lista se monta sozinha</h2><p class="nota">Com o que você compra com frequência nos recibos, ou com os itens que você incluir acima.</p><button class="btn" data-ir="recibo">Adicionar recibo</button></div>';
     var r = resumo(L), meses = ultimosMeses(3).map(mesBR).join(', '), marcados = L.filter(function (i) { return i.marcado; }).length;
     var h = kpis() + cartaoIncluir() + '<div class="card"><details' + (UI.abrirLista ? ' open' : '') + ' id="det-lista"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 style="margin:0">Lista do mês · ' + L.length + ' itens' + (marcados ? ' · ' + marcados + ' no carrinho' : '') + '</h2><span class="nota" style="margin:0;white-space:nowrap">' + (UI.abrirLista ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' +
-      '<p class="nota">' + (meses ? 'O que você comprou em pelo menos 2 dos últimos 3 meses (' + esc(meses) + ') e o que você incluiu. ' : '') + 'Comprando cada item onde é mais barato: <b>' + din(r.melhor) + '</b>' + (r.sempre > r.melhor ? ' em vez de ' + din(r.sempre) : '') + '. Toque no quadradinho para marcar o que já pegou.</p>' +
+      '<p class="nota">' + (meses ? (ultimosMeses(3).length < 3 ? 'Tudo o que você comprou nos recibos (' + esc(meses) + ') e o que você incluiu. Quando houver 3 meses de recibos, a lista mostra só o que se repete. ' : 'O que você comprou em pelo menos 2 dos últimos 3 meses (' + esc(meses) + ') e o que você incluiu. ') : '') + 'Comprando cada item onde é mais barato: <b>' + din(r.melhor) + '</b>' + (r.sempre > r.melhor ? ' em vez de ' + din(r.sempre) : '') + '. Toque no quadradinho para marcar o que já pegou.</p>' +
       '<div class="filtros"><button data-agrupar="cat" class="' + (UI.agrupar === 'cat' ? 'on' : '') + '">Por categoria</button><button data-agrupar="loja" class="' + (UI.agrupar === 'loja' ? 'on' : '') + '">Por mercado</button></div>';
     grupos(L).forEach(function (g) {
       var sub = g.itens.reduce(function (s, i) { var p = precoLista(i); return s + (p ? p * i.qtd : 0); }, 0);
