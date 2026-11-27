@@ -424,7 +424,7 @@ window.iniciarMercado = function (F) {
       if (res && res.lista) {
         h += '<p class="nota" style="margin-top:10px">Qual destes é o seu?</p>' + (res.lista.length ? res.lista.map(function (x, j) { return '<div class="linha"><div class="info"><div class="t" style="font-size:14px">' + esc(x.product_name || '?') + '</div><div class="s">' + esc(x.brands || '') + ' ' + esc(x.quantity || '') + ' ' + nsBadge(x.nutriscore_grade) + '</div></div><button class="btn sm" data-escolher="' + esc(i.k) + '" data-j="' + j + '">É este</button></div>'; }).join('') : '<div class="vazio">Nada encontrado. Tente outro nome.</div>');
       }
-      if (res && res.msg) h += '<p class="nota" style="margin-top:10px">' + esc(res.msg) + '</p>';
+      if (res && res.msg) h += '<p class="nota" style="margin-top:10px">' + esc(res.msg) + (res.site ? ' <a href="' + esc(res.site) + '" target="_blank" rel="noopener">Abrir no site do Open Food Facts</a>' : '') + '</p>';
       if (alts.length) h += '<p class="nota" style="margin:12px 0 2px"><b>Opções melhores no Canadá</b></p>' + alts.map(function (a) { return '<div class="linha"><div class="info"><div class="t" style="font-size:14px">' + nsBadge(a.ns) + ' ' + esc(a.nome) + '</div><div class="s">' + esc(a.marca || '') + ' ' + esc(a.qtd || '') + (a.nova ? ' · NOVA ' + esc(a.nova) : '') + '</div></div>' + (/^\d{6,14}$/.test(a.code || '') ? '<a class="btn sm" href="https://world.openfoodfacts.org/product/' + esc(a.code) + '" target="_blank" rel="noopener">Ver</a>' : '') + '</div>'; }).join('');
       h += '<input class="in" style="margin-top:10px" data-busca="' + esc(i.k) + '" value="' + esc((res && res.q) || p.en || i.pt) + '" aria-label="Nome para buscar no Open Food Facts">' +
         '<div class="grupo-btn" style="margin-top:6px"><button class="btn sm" data-off="' + esc(i.k) + '">Buscar no Open Food Facts</button>' + (o && o.cat ? '<button class="btn sm" data-alt="' + esc(i.k) + '">Opções melhores</button>' : '') + '</div>' +
@@ -635,13 +635,31 @@ window.iniciarMercado = function (F) {
   // ── Open Food Facts (gratuito; até 10 buscas por minuto) ──
   var OFF = 'https://world.openfoodfacts.org';
   var CAMPOS = 'code,product_name,brands,quantity,nutriscore_grade,nova_group,categories_tags';
-  function pedirOFF(url) { return fetch(url, { headers: { Accept: 'application/json' } }).then(function (r) { if (r.status === 429) throw { code: 'limite' }; if (!r.ok) throw { code: 'http' }; return r.json(); }); }
-  function falhaOFF(k, e) { UI.off[k] = Object.assign(UI.off[k] || {}, { lista: null, msg: e && e.code === 'limite' ? 'O Open Food Facts limita a 10 buscas por minuto. Espere um pouco e tente de novo.' : 'O Open Food Facts não respondeu agora (ele é gratuito e às vezes fica lento). Tente de novo em instantes.' }); desenhar(); }
+  // pedido com limite de tempo (o Open Food Facts às vezes não responde e o botão parecia "não fazer nada")
+  function pedirOFF(url, ms) {
+    var ctl = window.AbortController ? new AbortController() : null, t = ctl ? setTimeout(function () { ctl.abort(); }, ms || 12000) : null;
+    return fetch(url, ctl ? { signal: ctl.signal } : {}).then(function (r) { clearTimeout(t); if (r.status === 429) throw { code: 'limite' }; if (!r.ok) throw { code: 'http' }; return r.json(); }, function (e) { clearTimeout(t); throw e; });
+  }
+  var BUSCA_NOVA = 'https://search.openfoodfacts.org/search';
+  function buscaTexto(q) {
+    // 1º a busca nova do Open Food Facts (Search-a-licious); se falhar, a antiga
+    var url = function (txt) { return BUSCA_NOVA + '?q=' + encodeURIComponent(txt) + '&page_size=6&fields=' + CAMPOS; };
+    return pedirOFF(url(q + ' countries_tags:"en:canada"'), 10000).then(function (d) {
+      var l = (d && (d.hits || d.products)) || []; if (l.length) return l;
+      return pedirOFF(url(q), 10000).then(function (d2) { return (d2 && (d2.hits || d2.products)) || []; });
+    }).catch(function () {
+      return pedirOFF(OFF + '/cgi/search.pl?search_terms=' + encodeURIComponent(q) + '&search_simple=1&action=process&json=1&page_size=6&tagtype_0=countries&tag_contains_0=contains&tag_0=canada&fields=' + CAMPOS, 15000).then(function (d) { return (d && d.products) || []; });
+    });
+  }
+  function linkSiteOFF(q) { return OFF + '/cgi/search.pl?search_terms=' + encodeURIComponent(q || '') + '&search_simple=1&action=process'; }
+  function falhaOFF(k, e) { UI.off[k] = Object.assign(UI.off[k] || {}, { lista: null, msg: e && e.code === 'limite' ? 'O Open Food Facts limita a 10 buscas por minuto. Espere um pouco e tente de novo.' : 'O Open Food Facts não respondeu agora (ele é gratuito e às vezes fica lento). Tente de novo em 1 minuto, ou procure direto no site dele.', site: linkSiteOFF((UI.off[k] || {}).q) }); desenhar(); }
   function buscarOFF(k, q) {
     if (!q) return;
-    UI.off[k] = { q: q, msg: 'Buscando…' }; desenhar();
-    pedirOFF(OFF + '/cgi/search.pl?search_terms=' + encodeURIComponent(q) + '&search_simple=1&action=process&json=1&page_size=6&tagtype_0=countries&tag_contains_0=contains&tag_0=canada&fields=' + CAMPOS)
-      .then(function (d) { UI.off[k] = { q: q, lista: (d.products || []).slice(0, 6) }; desenhar(); }, function (e) { falhaOFF(k, e); });
+    UI.off[k] = { q: q, msg: '⏳ Buscando no Open Food Facts… pode levar alguns segundos.' }; desenhar();
+    buscaTexto(q).then(function (l) {
+      UI.off[k] = l.length ? { q: q, lista: l.slice(0, 6) } : { q: q, msg: 'Não achei “' + q + '” no Open Food Facts. Tente outro nome, em inglês, com a marca (ex.: “Nature Valley granola bar”).', site: linkSiteOFF(q) };
+      desenhar();
+    }, function (e) { falhaOFF(k, e); });
   }
   function escolherOFF(k, j) {
     var x = UI.off[k] && UI.off[k].lista && UI.off[k].lista[j]; if (!x) return;
