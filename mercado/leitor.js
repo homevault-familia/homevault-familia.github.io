@@ -104,7 +104,10 @@ var Leitor = (function () {
     });
     r.imposto = Math.round(r.imposto * 100) / 100;
     r.soma = Math.round(r.itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100;
+    // A IA às vezes inventa imposto: se os itens sozinhos já fecham o total, não há imposto à parte
+    if (r.total != null && r.imposto && Math.abs(r.soma - r.total) < 0.005) r.imposto = 0;
     r.soma = corrigeDigito(r.itens, r.total, r.imposto, r.soma);
+    if (r.total != null && r.imposto && Math.abs(r.soma - r.total) < 0.005) r.imposto = 0;
     if (!r.data) r.data = data(bruto, hoje);
     return r;
   }
