@@ -72,6 +72,7 @@ window.iniciarMercado = function (F) {
     var abaPedida = (qs.get('aba') || location.hash.replace('#', '')).toLowerCase();
     if (['lista', 'recibo', 'precos', 'saude', 'gastos', 'ajustes'].indexOf(abaPedida) >= 0) {
       UI.aba = abaPedida;
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
       qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x.dataset.aba === abaPedida); });
     }
     if (vindo && vindo.trim()) {
@@ -83,10 +84,29 @@ window.iniciarMercado = function (F) {
 
   function toast(t) { var el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(function () { el.style.display = 'none'; }, 3200); }
   function mostrar(v) { ['v-login', 'v-negado', 'v-app'].forEach(function (x) { $(x).style.display = x === v ? '' : 'none'; }); }
-  function erroTxt(e) { var c = (e && e.code) || String(e); return /PERMISSION/i.test(c) ? 'o Firebase recusou (as regras novas do Mercado já foram publicadas?)' : c; }
+  function erroTxt(e) { var c = (e && e.code) || String(e); try { console.log('Mercado erro:', c); } catch (x) {} return /PERMISSION/i.test(c) ? 'sem permissão. Peça ajuda a quem administra o Mercado.' : /network|unavailable|offline/i.test(c) ? 'sem internet. Confira a conexão e tente de novo.' : 'algo deu errado. Tente de novo.'; }
   function gravar(mudancas) { return F.update(F.ref(DB, base), mudancas).catch(function (e) { toast('Não salvou: ' + erroTxt(e)); throw e; }); }
-  function abrirFolha(html) { $('folha').innerHTML = html; $('fundo').classList.add('on'); }
-  function fecharFolha() { $('fundo').classList.remove('on'); $('folha').innerHTML = ''; }
+  function abrirFolha(html) { marcarHistorico(); document.body.style.overflow = 'hidden'; abrirFolha0(html); }
+  function abrirFolha0(html) { $('folha').innerHTML = '<button class="fechar-x" id="f-x" aria-label="Fechar">✕</button>' + html; $('fundo').classList.add('on'); $('f-x').onclick = function () { fecharFolha(); }; if ($('f-fechar')) $('f-fechar').addEventListener('click', function () { fecharFolha(); }); }
+  // ── ajuda (?) ──
+  var AJUDA = {
+    resumo: ['Os 3 números do topo', '<p><b>Gasto este mês:</b> a soma dos recibos salvos com data deste mês.</p><p><b>Sobra do orçamento:</b> o orçamento mensal (definido na aba Gastos) menos o que já foi gasto. Fica vermelho se passar.</p><p><b>Economia possível:</b> quanto você economizaria comprando cada item da lista no mercado onde ele saiu mais barato.</p>'],
+    incluir: ['Incluir na lista', '<p>Para pôr na lista algo que ainda não veio em nenhum recibo, como um produto novo.</p><p>Digite o nome, escolha <b>onde comprar</b> (ou deixe <b>Mais barato</b>), a quantidade, e toque em <b>Incluir</b>.</p>'],
+    lista: ['Lista do mês', '<p>A lista se monta sozinha com o que você compra nos recibos. Com 3 meses de recibos, ela passa a mostrar só o que se repete.</p><p><b>Quadradinho:</b> marca o que você já pegou no mercado.<br><b>Editar:</b> muda a quantidade, o mercado onde comprar, ou tira o item da lista.<br><b>Por mercado:</b> separa a lista por loja, para fazer as compras em mais de um lugar.<br><b>Compartilhar:</b> manda a lista pelo WhatsApp, e-mail ou Mensagens.</p>'],
+    novo: ['Como lançar um recibo', '<ol class="passos"><li>Toque em <b>1. Foto do recibo</b>. O iPhone abre o atalho <b>Mercado</b> e a câmera.</li><li>Fotografe o recibo inteiro, bem iluminado. A IA da Apple lê e o app volta sozinho para esta tela.</li><li>Toque em <b>2. Colar o recibo</b>.</li><li>Confira os itens e o total (deve aparecer <b>confere com o total ✓</b>) e toque em <b>Salvar recibo</b>.</li></ol><p><b>Digitar recibo à mão:</b> para quando não der para tirar foto.<br><b>Não tem a IA da Apple?</b> Use o ChatGPT ou o Gemini: o botão explica.</p><p>Se o atalho ainda não estiver no iPhone, instale em <b>⚙️ Configuração</b>.</p>'],
+    salvos: ['Recibos salvos', '<p>Todos os recibos que você já lançou, do mais novo para o mais antigo.</p><p>Toque em <b>Ver</b> para conferir, corrigir ou apagar um recibo. Para sair sem mudar nada, toque em <b>← Voltar</b>.</p><p>O app não deixa salvar o mesmo recibo duas vezes (mesmo mercado, data e total).</p>'],
+    nomes: ['Nomes aprendidos', '<p>Os recibos trazem nomes abreviados em inglês, como “RASPBERRIES” ou “PC BLK BEANS”. Quando você dá um nome a eles, o app guarda e usa o mesmo nome nas próximas compras.</p><p>Em <b>Ver e corrigir</b> você apaga um nome errado, e o app pergunta de novo da próxima vez.</p>'],
+    conferir: ['Conferir o recibo', '<p>Antes de salvar, confira:</p><ul><li><b>Mercado</b> e <b>data</b>.</li><li><b>Total pago</b> igual ao do recibo.</li><li>Cada item com o <b>nome que você usa</b> (use sempre o mesmo nome em mercados diferentes, para comparar preços) e a <b>categoria</b>.</li></ul><p>Se aparecer <b>confere com o total ✓</b>, está tudo certo. Se aparecer uma diferença em vermelho, falta um item ou algum valor está errado.</p><p><b>×</b> tira um item, <b>+ Item</b> acrescenta. <b>← Voltar</b> sai sem salvar.</p>'],
+    precos: ['Preços', '<p>Cada item da lista com o preço em cada mercado. Os preços vêm dos seus recibos e do que você anotar.</p><p>Toque no nome de um mercado (o quadrado com <b>+</b>) para anotar o preço que viu no folheto, no Flipp ou na prateleira. Compare sempre a mesma embalagem.</p><p><b>Em amarelo:</b> o mais barato. <b>Total da lista por mercado:</b> quanto sairia a lista inteira em cada loja.</p>'],
+    saude: ['Mais saudável', '<p>Para cada alimento da lista:</p><ol class="passos"><li><b>Buscar no Open Food Facts</b> mostra o Nutri-Score (A é o melhor) e o NOVA (1 natural, 4 ultraprocessado). Escolha o produto certo da lista.</li><li><b>Opções melhores</b> mostra produtos parecidos com nota melhor, vendidos no Canadá.</li><li>Para usar o <b>Yuka</b>: toque em <b>📋 Copiar</b>, abra o Yuka, cole na busca, e anote aqui a nota que ele der.</li></ol>'],
+    gastos: ['Gastos', '<p><b>Orçamento mensal:</b> quanto você quer gastar por mês com mercado. Ele aparece nos números do topo.</p><p><b>Por mês:</b> o total de cada mês; em vermelho, os que passaram do orçamento.<br><b>Por categoria</b> e <b>por mercado:</b> onde o dinheiro está indo.</p>'],
+    familia: ['Compartilhar com a família', '<ol class="passos"><li>A pessoa abre <b>minhacasaapp.com/mercado</b> no iPhone dela e entra com a conta dela.</li><li>Aparece um <b>código</b>. Ela te manda esse código.</li><li>Aqui, digite o nome dela, cole o código e toque em <b>Liberar acesso</b>.</li></ol><p>A partir daí, vocês veem e mexem na mesma lista, recibos e preços. <b>Remover</b> tira o acesso.</p>'],
+    atalho: ['Instalar o atalho', '<p>O atalho <b>Mercado</b> é o que tira a foto e usa a IA da Apple para ler o recibo.</p><ol class="passos"><li>Toque em <b>Instalar o atalho Mercado</b>.</li><li>Toque em <b>Get Shortcut</b> e depois <b>Add Shortcut</b>.</li><li>Não mude o nome: tem que ser <b>Mercado</b>.</li></ol><p>Dica: para ir mais rápido, ponha o atalho na tela inicial (no app Atalhos, segure o <b>Mercado</b> → <b>Share</b> → <b>Add to Home Screen</b>).</p>']
+  };
+  function ajuda(k) { return '<button class="ajuda" data-ajuda="' + k + '" aria-label="Ajuda: ' + esc(AJUDA[k][0]) + '">?</button>'; }
+  function abrirAjuda(k) { var a = AJUDA[k]; if (!a) return; abrirFolha('<h3>' + esc(a[0]) + '</h3><div class="nota" style="font-size:15px">' + a[1] + '</div><button class="btn pri cheio" id="f-fechar" style="margin-top:8px">Entendi</button>'); }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-ajuda]'); if (b) { e.preventDefault(); e.stopPropagation(); abrirAjuda(b.dataset.ajuda); } }, true);
+  function fecharFolha(doHistorico) { var aberta = $('fundo').classList.contains('on'); $('fundo').classList.remove('on'); $('folha').innerHTML = ''; document.body.style.overflow = ''; if (aberta && !doHistorico) { UI.ignorarPop = true; try { history.back(); } catch (e) {} } }
   $('fundo').addEventListener('click', function (e) { if (e.target === $('fundo')) fecharFolha(); });
 
   // ── login ──
@@ -109,7 +129,8 @@ window.iniciarMercado = function (F) {
     }).then(function () { $('l-entrar').disabled = false; });
   };
   $('l-senha').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('l-entrar').click(); });
-  $('p-sair').onclick = $('n-sair').onclick = function () { F.signOut(A); };
+  $('p-sair').onclick = function () { if (window.confirm('Sair do Mercado? Para voltar, você vai precisar entrar com o Google de novo.')) F.signOut(A); };
+  $('n-sair').onclick = function () { F.signOut(A); };
   $('n-copiar').onclick = function () { compartilharTexto('Código do Mercado (MinhaCasa) de ' + ((U && U.email) || '') + ':\n' + (U ? U.uid : ''), 'Código do Mercado'); };
 
   function semAcesso(u, e) {
@@ -135,6 +156,8 @@ window.iniciarMercado = function (F) {
         var v = s.val() || {};
         M = { recibos: v.recibos || {}, produtos: v.produtos || {}, dic: v.dic || {}, ajustes: v.ajustes || {}, membros: v.membros || {} };
         if (primeira) { primeira = false; mostrar('v-app'); if (UI.doAtalho) { UI.doAtalho = false; desenhar(); lerTexto(); return; } }
+        var foco = document.activeElement;
+        if (foco && $('conteudo').contains(foco) && /INPUT|TEXTAREA|SELECT/.test(foco.tagName)) { UI.pendente = true; return; }
         desenhar();
       }, function (e) { semAcesso(u, e); });
     });
@@ -149,7 +172,15 @@ window.iniciarMercado = function (F) {
     d.onclick = function () { nav.scrollBy({ left: 160, behavior: 'smooth' }); };
     nav.addEventListener('scroll', ver, { passive: true }); window.addEventListener('resize', ver); if (window.ResizeObserver) new ResizeObserver(ver).observe(nav); setTimeout(ver, 50); ver();
   })();
-  qsa('#abas button').forEach(function (b) { b.onclick = function () { UI.aba = b.dataset.aba; try { b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {} qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x === b); }); desenhar(); window.scrollTo(0, 0); }; });
+  $('conteudo').addEventListener('focusout', function () { setTimeout(function () { var f = document.activeElement; if (UI.pendente && !(f && $('conteudo').contains(f) && /INPUT|TEXTAREA|SELECT/.test(f.tagName))) { UI.pendente = false; desenhar(); } }, 300); });
+  // gesto de voltar do iPhone fecha a folha ou o recibo aberto, em vez de sair do app
+  function marcarHistorico() { try { history.pushState({ mercado: 1 }, ''); } catch (e) {} }
+  window.addEventListener('popstate', function () {
+    if (UI.ignorarPop) { UI.ignorarPop = false; return; }
+    if ($('fundo').classList.contains('on')) { fecharFolha(true); return; }
+    if (UI.rev) { if (!fecharRevisao(false, true)) marcarHistorico(); }
+  });
+  qsa('#abas button').forEach(function (b) { b.onclick = function () { fecharFolha(); if (UI.rev && b.dataset.aba !== UI.aba && UI.rev.id && !UI.rev._mudou) UI.rev = null; if (b.dataset.aba === 'recibo' && UI.aba === 'recibo' && UI.rev && !fecharRevisao()) return; UI.aba = b.dataset.aba; try { b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {} qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x === b); }); desenhar(); window.scrollTo(0, 0); }; });
 
   // ── dados derivados ──
   function recibos() { return Object.keys(M.recibos).map(function (id) { var r = M.recibos[id]; return Object.assign({ id: id }, r, { itens: [].concat(r.itens || []).filter(Boolean) }); }); }
@@ -162,7 +193,7 @@ window.iniciarMercado = function (F) {
         p.compras.push({ data: r.data, loja: r.loja, p: +it.un || (+it.total / (+it.qtd || 1)), qtd: +it.qtd || 1, total: +it.total || 0 });
       });
     });
-    Object.keys(M.produtos).forEach(function (k) { var p = M.produtos[k]; if (!c[k] && p.fixo === true) c[k] = { k: k, pt: p.pt || k, cat: p.cat || 'Outros', compras: [] }; if (c[k] && p.cat) c[k].cat = p.cat; });
+    Object.keys(M.produtos).forEach(function (k) { var p = M.produtos[k]; if (!c[k] && (p.fixo === true || p.fixo === false)) c[k] = { k: k, pt: p.pt || k, cat: p.cat || 'Outros', compras: [] }; if (c[k] && p.cat) c[k].cat = p.cat; });
     return c;
   }
   function precoEm(k, loja, cat) {
@@ -209,8 +240,8 @@ window.iniciarMercado = function (F) {
   function kpis() {
     var L = listaDoMes(), r = resumo(L), orc = +M.ajustes.orcamento || 0, g = gastoMes(mesDe(hojeISO()));
     return '<div class="kpis"><div class="kpi azul"><b>' + din(g) + '</b><span>gasto este mês</span></div>' +
-      '<div class="kpi ' + (orc && g > orc ? 'vermelho' : '') + '"><b>' + (orc ? din(Math.max(0, orc - g)) : '—') + '</b><span>' + (orc ? (g > orc ? 'acima do orçamento' : 'sobra do orçamento') : 'defina o orçamento em Gastos') + '</span></div>' +
-      '<div class="kpi verde"><b>' + (L.length ? din(Math.max(0, r.sempre - r.melhor)) : '—') + '</b><span>economia possível na lista</span></div></div>';
+      '<div class="kpi ' + (orc && g > orc ? 'vermelho' : '') + '"><b>' + (orc ? din(Math.max(0, orc - g)) : '—') + '</b><span>' + (orc ? (g > orc ? 'acima do orçamento' : 'sobra do orçamento') : '<a href="#" data-ir="gastos">defina o orçamento em Gastos</a>') + '</span></div>' +
+      '<div class="kpi verde"><b>' + (L.length ? din(Math.max(0, r.sempre - r.melhor)) : '—') + '</b><span>economia possível na lista</span></div><div class="kpi kpi-ajuda">' + ajuda('resumo') + '<span>O que são esses números?</span></div></div>';
   }
   function nomesConhecidos() { var n = {}; Object.keys(M.dic).forEach(function (k) { n[M.dic[k].pt] = 1; }); Object.values(catalogo()).forEach(function (c) { n[c.pt] = 1; }); return Object.keys(n).sort(); }
   function grupos(L) {
@@ -241,20 +272,20 @@ window.iniciarMercado = function (F) {
   }
   function copiarTexto(t) {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('Copiado. Cole no WhatsApp ou no e-mail.'); }, function () {
-      abrirFolha('<h3>Copie o texto</h3><textarea class="in" style="min-height:260px">' + esc(t) + '</textarea><button class="btn cheio" id="f-fechar" style="margin-top:10px">Fechar</button>'); $('f-fechar').onclick = fecharFolha;
+      abrirFolha('<h3>Copie o texto</h3><textarea class="in" style="min-height:260px">' + esc(t) + '</textarea><button class="btn cheio" id="f-fechar" style="margin-top:10px">Fechar</button>'); $('f-fechar').onclick = function () { fecharFolha(); };
     });
   }
   function cartaoIncluir() {
-    return '<div class="card"><h2>Incluir na lista</h2><datalist id="nomes-l">' + nomesConhecidos().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>' +
+    return '<div class="card"><h2>Incluir na lista' + ajuda('incluir') + '</h2><datalist id="nomes-l">' + nomesConhecidos().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>' +
       '<input class="in" id="add-nome" list="nomes-l" placeholder="Ex.: Café 925 g, detergente…" aria-label="Item para incluir">' +
       '<div class="grade3" style="grid-template-columns:minmax(0,1fr) 5.5em auto;margin-top:6px"><label class="mini">Onde comprar<select class="in" id="add-loja"><option value="">Mais barato</option>' + LOJAS.map(function (l) { return '<option value="' + l.id + '">' + esc(l.n) + '</option>'; }).join('') + '</select></label>' +
       '<label class="mini">Qtd<input class="in" id="add-qtd" type="number" min="0.1" step="0.1" inputmode="decimal" value="1"></label><button class="btn pri" id="add-ok">Incluir</button></div><div class="erro" id="add-erro"></div></div>';
   }
   function telaLista() {
     var L = listaDoMes();
-    if (!L.length) return kpis() + cartaoIncluir() + '<div class="card"><h2>A lista se monta sozinha</h2><p class="nota">Com o que você compra com frequência nos recibos, ou com os itens que você incluir acima.</p><button class="btn" data-ir="recibo">Adicionar recibo</button></div>';
+    if (!L.length) return kpis() + cartaoIncluir() + '<div class="card"><h2>A lista se monta sozinha' + ajuda('lista') + '</h2><p class="nota">Com o que você compra com frequência nos recibos, ou com os itens que você incluir acima.</p><button class="btn" data-ir="recibo">Adicionar recibo</button></div>';
     var r = resumo(L), meses = ultimosMeses(3).map(mesBR).join(', '), marcados = L.filter(function (i) { return i.marcado; }).length;
-    var h = kpis() + cartaoIncluir() + '<div class="card"><details' + (UI.abrirLista ? ' open' : '') + ' id="det-lista"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 style="margin:0">Lista do mês · ' + L.length + ' itens' + (marcados ? ' · ' + marcados + ' no carrinho' : '') + '</h2><span class="nota" style="margin:0;white-space:nowrap">' + (UI.abrirLista ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' +
+    var h = kpis() + cartaoIncluir() + '<div class="card"><details' + (UI.abrirLista ? ' open' : '') + ' id="det-lista"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 style="margin:0">Lista do mês · ' + L.length + ' itens' + (marcados ? ' · ' + marcados + ' no carrinho' : '') + ajuda('lista') + '</h2><span class="nota" style="margin:0;white-space:nowrap">' + (UI.abrirLista ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' +
       '<p class="nota">' + (meses ? (ultimosMeses(3).length < 3 ? 'Tudo o que você comprou nos recibos (' + esc(meses) + ') e o que você incluiu. Quando houver 3 meses de recibos, a lista mostra só o que se repete. ' : 'O que você comprou em pelo menos 2 dos últimos 3 meses (' + esc(meses) + ') e o que você incluiu. ') : '') + 'Comprando cada item onde é mais barato: <b>' + din(r.melhor) + '</b>' + (r.sempre > r.melhor ? ' em vez de ' + din(r.sempre) : '') + '. Toque no quadradinho para marcar o que já pegou.</p>' +
       '<div class="filtros"><button data-agrupar="cat" class="' + (UI.agrupar === 'cat' ? 'on' : '') + '">Por categoria</button><button data-agrupar="loja" class="' + (UI.agrupar === 'loja' ? 'on' : '') + '">Por mercado</button></div>';
     grupos(L).forEach(function (g) {
@@ -262,8 +293,8 @@ window.iniciarMercado = function (F) {
       h += '<div class="selo" style="margin:12px 0 2px">' + esc(g.nome) + (UI.agrupar === 'loja' && sub ? ' · ~' + din(sub) : '') + '</div>';
       g.itens.forEach(function (i) {
         h += '<div class="linha' + (i.marcado ? ' feito' : '') + '"><button class="caixa" data-marcar="' + esc(i.k) + '" aria-pressed="' + i.marcado + '" aria-label="Marcar ' + esc(i.pt) + '">' + (i.marcado ? '✓' : '') + '</button><div class="info"><div class="t">' + esc(i.qtd) + ' × ' + esc(i.pt) + '</div><div class="s">' +
-          (i.loja ? 'Comprar na ' + esc(LN[i.loja]) + (precoLista(i) ? ' · ' + din(precoLista(i)) : '') + (i.min && i.min.loja !== i.loja ? ' · mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p) : '') : i.min ? (UI.agrupar === 'loja' ? din(i.min.p) + ' cada' : 'Mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p)) : 'Sem preço para comparar') + (i.ult && UI.agrupar !== 'loja' ? ' · última vez ' + din(i.ult.p) + ' (' + esc(LN[i.ult.loja] || '') + ')' : '') + '</div></div>' +
-          '<button class="btn sm" data-qtd="' + esc(i.k) + '" aria-label="Editar ' + esc(i.pt) + '">Editar</button><button class="btn sm" data-tirar="' + esc(i.k) + '" aria-label="Tirar ' + esc(i.pt) + ' da lista">Tirar</button></div>';
+          (i.loja ? 'Comprar na ' + esc(LN[i.loja]) + (precoLista(i) ? ' · ' + din(precoLista(i)) : '') + (i.min && i.min.loja !== i.loja ? ' · mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p) : '') : i.min ? (UI.agrupar === 'loja' ? din(i.min.p) + ' cada' : 'Mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p)) : 'Sem preço para comparar') + (i.ult && UI.agrupar !== 'loja' && !(i.min && i.min.loja === i.ult.loja && Math.abs(i.min.p - i.ult.p) < 0.005) ? ' · última vez ' + din(i.ult.p) + ' na ' + esc(LN[i.ult.loja] || '') : '') + '</div></div>' +
+          '<button class="btn sm" data-qtd="' + esc(i.k) + '" aria-label="Editar ' + esc(i.pt) + '">Editar</button></div>';
       });
     });
     h += '<div class="grupo-btn" style="margin-top:14px"><button class="btn pri" id="compartilhar">Compartilhar</button><button class="btn" id="copiar-lista">Copiar</button>' + (marcados ? '<button class="btn" id="desmarcar">Desmarcar tudo</button>' : '') + '</div>' +
@@ -272,6 +303,7 @@ window.iniciarMercado = function (F) {
     if (fora.length) h += '<div class="card"><h2>Outros itens já comprados</h2><p class="nota">Toque para colocar na lista.</p><div class="chips">' + fora.map(function (c) { return '<button class="chip" data-fixar="' + esc(c.k) + '">+ ' + esc(c.pt) + '</button>'; }).join('') + '</div></div>';
     return h;
   }
+  function folhaPedido() { abrirFolha('<h3>Copie o pedido</h3><p class="nota">Toque e segure no texto → Selecionar tudo → Copiar.</p><textarea class="in" readonly style="min-height:240px">' + esc(PEDIDO_IA) + '</textarea><button class="btn cheio" id="f-fechar" style="margin-top:10px">Fechar</button>'); }
   function mostrarCaixa(msg) { $('caixa').style.display = ''; $('texto').focus(); $('r-erro').textContent = msg; }
   // Link do iCloud do atalho "Mercado" (Shortcuts → segurar → Share → Copy iCloud Link). Trocar aqui se o atalho mudar.
   var ATALHO_URL = 'https://www.icloud.com/shortcuts/6662d894184449e487534350d39ba320';
@@ -282,32 +314,33 @@ window.iniciarMercado = function (F) {
     'Category must be one of: Hortifruti, Carnes e peixes, Laticínios e ovos, Padaria, Mercearia, Congelados, Bebidas, Lanches e doces, Limpeza, Higiene, Bebê e pet, Outros.\n' +
     'Numbers with a dot, no $ sign. Weighed items: quantity is the weight. Apply discounts to the item. Never list subtotal, total, tax, payment, card or change as items. The line totals plus tax must equal TOTAL; if not, re-check the prices.';
   function telaAjustes() {
-    return cartaoFamilia() + '<div class="card"><h2>Instalar o atalho no iPhone</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
+    return cartaoFamilia() + '<div class="card"><h2>Instalar o atalho no iPhone' + ajuda('atalho') + '</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
       '<ol class="passos"><li>Toque no botão abaixo.</li><li>Toque em <b>Get Shortcut</b> (Obter atalho) e depois em <b>Add Shortcut</b> (Adicionar atalho).</li><li>Deixe o nome <b>Mercado</b>, sem mudar.</li></ol>' +
       '<a class="btn cheio" href="' + ATALHO_URL + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Instalar o atalho Mercado</a>' +
       '<p class="nota" style="margin-top:8px">O atalho usa a IA da Apple (iPhone 15 Pro ou mais novo). Sem ela, use <b>Não tem a IA da Apple?</b> na aba <b>Recibo</b>. Se o iPhone pedir para baixar o app <b>Atalhos</b> (Shortcuts), baixe na App Store: é gratuito, da Apple.</p></div>';
   }
   function telaRecibo() {
     if (UI.rev) return telaRevisar();
-    var h = '<div class="card"><h2>Novo recibo</h2>' +
+    var h = '<div class="card"><h2>Novo recibo' + ajuda('novo') + '</h2>' +
       // Caminho principal: atalho "Mercado" do iPhone (foto → IA da Apple → volta aqui em #recibo) e depois Colar
       '<a class="btn pri cheio" id="atalho" href="shortcuts://run-shortcut?name=Mercado" style="min-height:56px;font-size:17px;display:flex;align-items:center;justify-content:center;text-decoration:none">📷 1. Foto do recibo</a>' +
       '<button class="btn cheio" id="colar" style="min-height:52px;font-size:17px;margin-top:10px">📋 2. Colar o recibo</button>' +
-      '<p class="nota" style="margin:8px 0 0">O botão 1 abre o atalho <b>Mercado</b>. Depois da foto, o app volta aqui: toque no 2.</p><div class="erro" id="r-erro"></div>' +
+      '<p class="nota" style="margin:8px 0 0">O botão 1 abre o atalho <b>Mercado</b>. Depois da foto, o app volta aqui: toque no 2 e, se o iPhone mostrar o balãozinho <b>Colar</b> (Paste), toque nele. <a href="#" data-ir="ajustes">Primeira vez? Instale o atalho em ⚙️ Configuração.</a></p><div class="erro" id="r-erro"></div>' +
       // caixa de reserva: só aparece se o navegador não deixar ler a área de transferência
       '<div id="caixa" style="display:' + (UI.texto ? '' : 'none') + ';margin-top:10px"><textarea class="in" id="texto" placeholder="Toque e segure aqui → Colar">' + esc(UI.texto) + '</textarea>' +
-      '<div class="grupo-btn" style="margin-top:8px"><button class="btn" id="ler">Ler texto</button></div></div>' +
-      '<div class="grupo-btn" style="margin-top:10px"><button class="btn sm" id="manual">Recibo em branco</button></div>' +
+      '<div class="grupo-btn" style="margin-top:8px"><button class="btn" id="ler">Ler este recibo</button></div></div>' +
+      '<div class="grupo-btn" style="margin-top:10px"><button class="btn sm" id="manual">✍️ Digitar recibo à mão</button></div>' +
       // sem IA da Apple: qualquer app de IA que leia foto (ChatGPT, Gemini, Copilot, Claude) devolve o mesmo formato
       '<details style="margin-top:14px"><summary class="btn cheio" style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:center;gap:6px">🤖 Não tem a IA da Apple? Use o ChatGPT ou o Gemini</summary>' +
       '<ol class="passos"><li>Toque em <b>Copiar pedido para a IA</b>.</li><li>Abra um app de IA que leia foto (ChatGPT, Gemini, Copilot ou Claude), <b>cole o pedido</b> e mande a <b>foto do recibo</b>.</li><li>Copie a resposta, volte aqui e toque em <b>2. Colar o recibo</b>.</li></ol>' +
       '<button class="btn cheio" id="copiar-pedido">Copiar pedido para a IA</button></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
-    h += '<div class="card"><details' + (UI.abrirRecibos ? ' open' : '') + ' id="det-recibos"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0">Recibos salvos · ' + rs.length + '</h2><span class="nota" style="margin:0">' + (UI.abrirRecibos ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' + (rs.length ? rs.slice(0, 40).map(function (r) {
-      return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + ' · ' + esc(r.data) + '</div><div class="s">' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Ver</button></div>';
+    h += '<div class="card"><details' + (UI.abrirRecibos ? ' open' : '') + ' id="det-recibos"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0">Recibos salvos · ' + rs.length + ajuda('salvos') + '</h2><span class="nota" style="margin:0">' + (UI.abrirRecibos ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' + (rs.length ? rs.slice(0, UI.nRecibos || 20).map(function (r) {
+      return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + '</div><div class="s">' + esc(dataBR(r.data)) + ' · ' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Abrir</button></div>';
     }).join('') : '<div class="vazio">Nenhum recibo ainda.</div>') + '</div></details></div>';
+    if (rs.length > (UI.nRecibos || 20)) h = h.replace(/<\/div><\/details><\/div>$/, '<button class="btn cheio" id="mais-recibos" style="margin-top:10px">Ver mais recibos (' + (rs.length - (UI.nRecibos || 20)) + ')</button></div></details></div>');
     var nd = Object.keys(M.dic).length;
-    if (nd) h += '<div class="card"><h2>Nomes aprendidos · ' + nd + '</h2><p class="nota">Cada código do recibo que você renomeia fica guardado. Na próxima vez ele já vem com o seu nome e a categoria certa.</p><button class="btn sm" id="ver-dic">Ver e corrigir</button></div>';
+    if (nd) h += '<div class="card"><h2>Nomes aprendidos · ' + nd + ajuda('nomes') + '</h2><p class="nota">Cada código do recibo que você renomeia fica guardado. Na próxima vez ele já vem com o seu nome e a categoria certa.</p><button class="btn sm" id="ver-dic">Ver e corrigir</button></div>';
     return h;
   }
   function itemDoLeitor(it) {
@@ -320,32 +353,39 @@ window.iniciarMercado = function (F) {
     return recibos().filter(function (x) { return x.id !== r.id && x.loja === r.loja && x.data === r.data && Math.abs((+x.total || 0) - total) < 0.005; })[0] || null;
   }
   function totalRev(r) { var soma = r.itens.reduce(function (s, i) { return s + (+i.total || 0); }, 0); return r.total == null || r.total === '' ? Math.round((soma + (+r.imposto || 0)) * 100) / 100 : +r.total; }
-  function avisoDup(d) { return 'Este recibo já foi salvo: <b>' + esc(LN[d.loja] || 'Outro') + ' · ' + esc(d.data) + ' · ' + din(d.total) + '</b>. Não precisa salvar de novo.'; }
+  function avisoDup(d) { return 'Este recibo já foi salvo: <b>' + esc(LN[d.loja] || 'Outro') + ' · ' + esc(dataBR(d.data)) + ' · ' + din(d.total) + '</b>. Não precisa salvar de novo.'; }
+  function dataBR(d) { var m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '/' + m[2] + '/' + m[1] : (d || ''); }
+  function somaHtml(r) {
+    var soma = r.itens.reduce(function (s, i) { return s + (+i.total || 0); }, 0), dif = r.total ? Math.abs(soma + (+r.imposto || 0) - r.total) : 0;
+    return 'Itens: <b>' + din(soma) + '</b>' + (r.total ? ' + imposto ' + din(r.imposto || 0) + ' = ' + din(soma + (+r.imposto || 0)) + (dif > 0.05 ? ' · <b style="color:#b91c1c">diferença de ' + din(dif) + ' para o total pago — confira</b>' : ' · <b style="color:#15803d">confere com o total ✓</b>') : '');
+  }
+  function atualizarSoma() { if ($('rv-soma') && UI.rev) $('rv-soma').innerHTML = somaHtml(UI.rev); }
   function telaRevisar() {
     var r = UI.rev, soma = r.itens.reduce(function (s, i) { return s + (+i.total || 0); }, 0);
     var dif = r.total ? Math.abs(soma + (+r.imposto || 0) - r.total) : 0;
     var nomes = {}; Object.keys(M.dic).forEach(function (k) { nomes[M.dic[k].pt] = 1; }); Object.values(catalogo()).forEach(function (c) { nomes[c.pt] = 1; });
     var h = '<datalist id="nomes">' + Object.keys(nomes).sort().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>';
+    h += '<div class="barra-voltar"><button class="btn" id="rv-voltar">← Voltar</button><span>' + (r.id ? 'Recibo salvo' : 'Recibo novo, ainda não salvo') + '</span></div>';
     var dup = r.id ? null : duplicado(r, totalRev(r));
-    if (dup) h += '<div class="card" style="background:#fef2f2;border:1px solid #fecaca"><p class="nota" style="margin:0;color:#991b1b">⚠️ ' + avisoDup(dup) + ' Toque em <b>Cancelar</b> lá embaixo.</p></div>';
-    h += '<div class="card"><h2>' + (r.id ? 'Editar recibo' : 'Conferir recibo') + '</h2>' +
+    if (dup) h += '<div class="card" style="background:#fef2f2;border:1px solid #fecaca"><p class="nota" style="margin:0;color:#991b1b">⚠️ ' + avisoDup(dup) + ' Toque em <b>← Voltar</b>.</p></div>';
+    h += '<div class="card"><h2>' + (r.id ? 'Editar recibo' : 'Conferir recibo') + ajuda('conferir') + '</h2>' +
       (r.emparelhou ? '<p class="nota">O texto veio com os nomes e os preços em colunas separadas. Juntei na ordem; confira se cada preço ficou no item certo.</p>' : '') +
       '<div class="grade3" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><div><label class="lb" for="rv-loja">Mercado</label><select class="in" id="rv-loja">' + LOJAS.map(function (l) { return '<option value="' + l.id + '"' + (l.id === r.loja ? ' selected' : '') + '>' + esc(l.n) + '</option>'; }).join('') + '</select></div>' +
       '<div><label class="lb" for="rv-data">Data</label><input class="in" type="date" id="rv-data" value="' + esc(r.data) + '"></div>' +
       '<div><label class="lb" for="rv-total">Total pago</label><input class="in" type="number" step="0.01" inputmode="decimal" id="rv-total" value="' + esc(dec2(r.total)) + '"></div>' +
       '<div><label class="lb" for="rv-imp">Imposto (HST)</label><input class="in" type="number" step="0.01" inputmode="decimal" id="rv-imp" value="' + esc(r.imposto ? dec2(r.imposto) : '') + '"></div></div>' +
-      '<p class="nota" style="margin-top:10px">Itens: <b>' + din(soma) + '</b>' + (r.total ? ' + imposto ' + din(r.imposto || 0) + ' = ' + din(soma + (+r.imposto || 0)) + (dif > 0.05 ? ' · <b style="color:#b91c1c">diferença de ' + din(dif) + ' para o total pago — confira</b>' : ' · confere com o total ✓') : '') + '</p></div>';
+      '<p class="nota" style="margin-top:10px" id="rv-soma">' + somaHtml(r) + '</p></div>';
     h += '<div class="card"><h2>' + r.itens.length + ' itens</h2><p class="nota">Dê a cada item o nome que você usa (ex.: “Leite 2% 4 L”). Use sempre o mesmo nome em mercados diferentes para comparar os preços. O app lembra na próxima vez.</p>' +
       r.itens.map(function (it, i) {
-        return '<div class="item-rev">' + (it.raw ? '<div class="raw">' + esc(it.raw) + (it.novo ? ' · <b style="color:#b45309">novo</b>' : '') + '</div>' : '') +
+        return '<div class="item-rev">' + (it.raw ? '<div class="raw">' + esc(it.raw) + (it.novo ? ' · <b style="color:#b45309">nome novo, confira</b>' : '') + '</div>' : '') +
           '<input class="in" list="nomes" data-i="' + i + '" data-f="pt" value="' + esc(it.pt) + '" aria-label="Nome do item">' +
           '<div class="grade3"><select class="in" data-i="' + i + '" data-f="cat" aria-label="Categoria">' + CATS.map(function (c) { return '<option' + (c === it.cat ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>' +
           '<label class="mini">Qtd<input class="in" type="number" step="0.001" inputmode="decimal" data-i="' + i + '" data-f="qtd" value="' + esc(it.qtd) + '"></label>' +
-          '<label class="mini">Total $<input class="in" type="number" step="0.01" inputmode="decimal" data-i="' + i + '" data-f="total" value="' + esc(dec2(it.total)) + '"></label>' +
+          '<label class="mini">Valor (CA$)<input class="in" type="number" step="0.01" inputmode="decimal" data-i="' + i + '" data-f="total" value="' + esc(dec2(it.total)) + '"></label>' +
           '<button class="btn sm" data-rm="' + i + '" aria-label="Remover item">×</button></div></div>';
       }).join('') +
-      '<div class="grupo-btn" style="margin-top:12px"><button class="btn" id="rv-mais">+ Item</button></div></div>' +
-      '<div class="grupo-btn"><button class="btn pri" id="rv-salvar" style="flex:1">Salvar recibo</button><button class="btn" id="rv-cancelar">Cancelar</button>' + (r.id ? '<button class="btn" id="rv-apagar" style="color:#b91c1c">Apagar</button>' : '') + '</div><div class="erro" id="rv-erro"></div>';
+      '<div class="grupo-btn" style="margin-top:12px"><button class="btn" id="rv-mais">+ Adicionar item</button></div></div>' +
+      '<div class="grupo-btn acoes-fixas"><button class="btn pri" id="rv-salvar" style="flex:1">' + (r.id ? 'Salvar alterações' : 'Salvar recibo') + '</button><button class="btn" id="rv-cancelar">' + (r.id ? 'Voltar sem salvar' : 'Descartar') + '</button><div class="erro" id="rv-erro" style="flex-basis:100%;margin:0"></div></div>' + (r.id ? '<div style="text-align:center;margin:18px 0 6px"><button class="btn" id="rv-apagar" style="color:#b91c1c;border-color:#fecaca">Apagar este recibo</button></div>' : '');
     return h;
   }
   function telaPrecos() {
@@ -356,7 +396,7 @@ window.iniciarMercado = function (F) {
     var completo = tot.filter(function (t) { return t.n === L.length; }).sort(function (a, b) { return a.s - b.s; })[0];
     var h = '<div class="kpis"><div class="kpi"><b>' + din(r.sempre) + '</b><span>pagando como sempre</span></div><div class="kpi verde"><b>' + din(r.melhor) + '</b><span>melhor preço em cada item</span></div>' +
       '<div class="kpi azul"><b>' + (completo ? din(completo.s) : '—') + '</b><span>' + (completo ? 'tudo na ' + esc(completo.l.n) : 'faltam preços para comparar um mercado só') + '</span></div></div>';
-    h += '<div class="card"><p class="nota" style="margin:0">Os preços vêm dos seus recibos e do que você anota. Toque num mercado para anotar o preço que viu no folheto, no Flipp ou na prateleira. Compare sempre a mesma embalagem. Em amarelo, o mais barato.</p></div>';
+    h += '<div class="card"><h2>Comparar preços' + ajuda('precos') + '</h2><p class="nota" style="margin:0">Os preços vêm dos seus recibos e do que você anota. Toque num mercado para anotar o preço que viu no folheto, no Flipp ou na prateleira. Compare sempre a mesma embalagem. Em amarelo, o mais barato.</p></div>';
     var c = '';
     L.forEach(function (i) {
       if (i.cat !== c) { c = i.cat; h += '<div class="selo" style="margin:6px 0 8px">' + esc(c) + '</div>'; }
@@ -374,12 +414,12 @@ window.iniciarMercado = function (F) {
   function yukaCor(v) { return v < 25 ? 'y0' : v < 50 ? 'y1' : v < 75 ? 'y2' : 'y3'; }
   function telaSaude() {
     var L = listaDoMes().filter(function (i) { return COMIDA[i.cat]; });
-    var h = '<div class="card"><h2>Mais saudável</h2><p class="nota">Para cada alimento da lista, busque o produto no <b>Open Food Facts</b> (base aberta e gratuita) para ver o Nutri-Score e a classificação NOVA, e depois opções melhores vendidas no Canadá. O Yuka não tem ligação aberta com outros apps: escaneie no Yuka e anote a nota aqui.</p>' +
+    var h = '<div class="card"><h2>Mais saudável' + ajuda('saude') + '</h2><p class="nota">Para cada alimento da lista, busque o produto no <b>Open Food Facts</b> (base aberta e gratuita) para ver o Nutri-Score e a classificação NOVA, e depois opções melhores vendidas no Canadá. O Yuka não tem ligação aberta com outros apps: escaneie no Yuka e anote a nota aqui.</p>' +
       '<p class="nota" style="margin:0">Nutri-Score: ' + ['a', 'b', 'c', 'd', 'e'].map(nsBadge).join(' ') + ' (A é o melhor). NOVA: 1 natural … 4 ultraprocessado. Yuka: <span class="ns y0">0–24</span> <span class="ns y1">25–49</span> <span class="ns y2">50–74</span> <span class="ns y3">75–100</span></p></div>';
     if (!L.length) return h + '<div class="vazio">Os alimentos da sua lista aparecem aqui.</div>';
     L.forEach(function (i) {
       var p = M.produtos[i.k] || {}, o = p.off, alts = [].concat(p.alts || []).filter(Boolean), res = UI.off[i.k];
-      h += '<div class="card"><div class="linha" style="padding:0"><div class="info"><div class="t" style="display:flex;align-items:center;gap:8px">' + esc(i.pt) + '<button class="btn sm" data-copiar="' + esc(i.k) + '" aria-label="Copiar nome para buscar no Yuka" title="Copiar nome" style="min-height:32px;padding:4px 10px">📋 Copiar</button></div><div class="s">' + (o ? esc(o.nome) + (o.marca ? ' · ' + esc(o.marca) : '') + ' ' + nsBadge(o.ns) + (o.nova ? ' <span class="selo">NOVA ' + esc(o.nova) + '</span>' : '') : 'Ainda não buscado') + '</div></div>' +
+      h += '<div class="card"><div class="linha" style="padding:0"><div class="info"><div class="t" style="display:flex;align-items:center;gap:8px">' + esc(i.pt) + '<button class="btn sm" data-copiar="' + esc(i.k) + '" aria-label="Copiar nome para buscar no Yuka" title="Copiar nome">📋 Copiar</button></div><div class="s">' + (o ? esc(o.nome) + (o.marca ? ' · ' + esc(o.marca) : '') + ' ' + nsBadge(o.ns) + (o.nova ? ' <span class="selo">NOVA ' + esc(o.nova) + '</span>' : '') : 'Ainda não buscado') + '</div></div>' +
         (p.yuka != null ? '<span class="ns ' + yukaCor(+p.yuka) + '">' + esc(p.yuka) + '</span>' : '') + '</div>';
       if (res && res.lista) {
         h += '<p class="nota" style="margin-top:10px">Qual destes é o seu?</p>' + (res.lista.length ? res.lista.map(function (x, j) { return '<div class="linha"><div class="info"><div class="t" style="font-size:14px">' + esc(x.product_name || '?') + '</div><div class="s">' + esc(x.brands || '') + ' ' + esc(x.quantity || '') + ' ' + nsBadge(x.nutriscore_grade) + '</div></div><button class="btn sm" data-escolher="' + esc(i.k) + '" data-j="' + j + '">É este</button></div>'; }).join('') : '<div class="vazio">Nada encontrado. Tente outro nome.</div>');
@@ -407,7 +447,7 @@ window.iniciarMercado = function (F) {
     rs.filter(function (r) { return u3.indexOf(mesDe(r.data)) >= 0; }).forEach(function (r) { var n = LN[r.loja] || 'Outro'; pl[n] = (pl[n] || 0) + (+r.total || 0); });
     var lojas = Object.keys(pl).map(function (n) { return { l: n, v: pl[n] }; }).sort(function (a, b) { return b.v - a.v; });
     var mx = function (a) { return Math.max.apply(null, [1].concat(a.map(function (r) { return r.v; }))); };
-    return kpis() + '<div class="card"><h2>Orçamento mensal do mercado</h2><div class="grade3" style="grid-template-columns:minmax(0,10em) auto;justify-content:start"><input class="in" type="number" min="0" step="10" inputmode="decimal" id="orc" value="' + esc(orc ? dec2(orc) : '') + '" placeholder="CA$" aria-label="Orçamento mensal em dólares"><button class="btn" id="orc-salvar">Salvar</button></div></div>' +
+    return kpis() + '<div class="card"><h2>Orçamento mensal do mercado' + ajuda('gastos') + '</h2><div class="grade3" style="grid-template-columns:minmax(0,10em) auto;justify-content:start"><input class="in" type="number" min="0" step="10" inputmode="decimal" id="orc" value="' + esc(orc ? dec2(orc) : '') + '" placeholder="CA$" aria-label="Orçamento mensal em dólares"><button class="btn" id="orc-salvar">Salvar</button></div></div>' +
       '<div class="card"><h2>Por mês</h2>' + barras(meses, Math.max(orc, mx(meses)), orc) + (orc ? '<p class="nota" style="margin-top:8px">Em vermelho, os meses acima de ' + din(orc) + '.</p>' : '') + '</div>' +
       '<div class="card"><h2>Este mês por categoria</h2>' + barras(cats, mx(cats)) + '</div>' +
       '<div class="card"><h2>Por mercado · últimos 3 meses</h2>' + barras(lojas, mx(lojas)) + '</div>';
@@ -415,14 +455,14 @@ window.iniciarMercado = function (F) {
 
   // ── ações ──
   function ligar() {
-    qsa('[data-ir]').forEach(function (b) { b.onclick = function () { qsa('#abas button').forEach(function (x) { if (x.dataset.aba === b.dataset.ir) x.click(); }); }; });
-    qsa('[data-tirar]').forEach(function (b) { b.onclick = function () { var k = b.dataset.tirar, m = {}; m['produtos/' + k + '/fixo'] = false; gravar(m).then(function () { toast('Tirado da lista'); }); }; });
+    qsa('[data-ir]').forEach(function (b) { b.onclick = function (e) { if (e) e.preventDefault(); qsa('#abas button').forEach(function (x) { if (x.dataset.aba === b.dataset.ir) x.click(); }); }; });
+    qsa('[data-tirar]').forEach(function (b) { b.onclick = function () { if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Confirmar'; setTimeout(function () { b.dataset.ok = ''; b.textContent = 'Tirar'; }, 4000); return; } var k = b.dataset.tirar, m = {}; m['produtos/' + k + '/fixo'] = false; gravar(m).then(function () { toast('Tirado da lista'); }); }; });
     qsa('[data-fixar]').forEach(function (b) { b.onclick = function () { var k = b.dataset.fixar, c = catalogo()[k], m = {}; m['produtos/' + k + '/fixo'] = true; m['produtos/' + k + '/pt'] = c.pt; m['produtos/' + k + '/cat'] = c.cat; gravar(m); }; });
     if ($('copiar-lista')) $('copiar-lista').onclick = function () { copiarTexto(textoLista(listaDoMes())); };
     if ($('compartilhar')) $('compartilhar').onclick = function () { compartilharTexto(textoLista(listaDoMes())); };
     qsa('[data-agrupar]').forEach(function (b) { b.onclick = function () { UI.agrupar = b.dataset.agrupar; desenhar(); }; });
     qsa('[data-marcar]').forEach(function (b) { b.onclick = function () { var k = b.dataset.marcar, on = b.getAttribute('aria-pressed') !== 'true', m = {}; m['produtos/' + k + '/marcado'] = on ? mesDe(hojeISO()) : null; m['produtos/' + k + '/pt'] = (catalogo()[k] || {}).pt || k; gravar(m); }; });
-    if ($('desmarcar')) $('desmarcar').onclick = function () { var m = {}; listaDoMes().forEach(function (i) { if (i.marcado) m['produtos/' + i.k + '/marcado'] = null; }); gravar(m); };
+    if ($('desmarcar')) $('desmarcar').onclick = function () { var b = this; if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Toque de novo para desmarcar'; setTimeout(function () { b.dataset.ok = ''; b.textContent = 'Desmarcar tudo'; }, 4000); return; } var m = {}; listaDoMes().forEach(function (i) { if (i.marcado) m['produtos/' + i.k + '/marcado'] = null; }); gravar(m); };
     qsa('[data-qtd]').forEach(function (b) { b.onclick = function () { editarQtd(b.dataset.qtd); }; });
     if ($('add-nome')) {
       $('add-nome').onchange = function () { var p = M.produtos[chave(this.value)]; if (p && p.loja) $('add-loja').value = p.loja; };
@@ -448,8 +488,8 @@ window.iniciarMercado = function (F) {
     if ($('texto')) $('texto').onfocus = function () { UI.inicio = this.value.length; };
     if ($('copiar-pedido')) $('copiar-pedido').onclick = function () {
       var b = this, ok = function () { b.textContent = 'Pedido copiado ✓ Agora abra o app de IA'; };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(PEDIDO_IA).then(ok, function () { mostrarCaixa('Copie o pedido abaixo.'); $('texto').value = PEDIDO_IA; });
-      else { mostrarCaixa('Copie o pedido abaixo.'); $('texto').value = PEDIDO_IA; }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(PEDIDO_IA).then(ok, function () { folhaPedido(); });
+      else folhaPedido();
     };
     if ($('colar')) $('colar').onclick = function () {
       if (!navigator.clipboard || !navigator.clipboard.readText) { mostrarCaixa('Toque e segure na caixa abaixo e escolha Colar.'); return; }
@@ -457,9 +497,10 @@ window.iniciarMercado = function (F) {
         function () { mostrarCaixa('Toque e segure na caixa abaixo e escolha Colar.'); });
     };
     if ($('ler')) $('ler').onclick = function () { UI.texto = $('texto').value; lerTexto(); };
-    if ($('manual')) $('manual').onclick = function () { UI.rev = { loja: 'superstore', data: hojeISO(), total: null, imposto: 0, itens: [{ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }] }; desenhar(); };
-    qsa('[data-ver]').forEach(function (b) { b.onclick = function () { var r = recibos().filter(function (x) { return x.id === b.dataset.ver; })[0]; if (!r) return; UI.rev = JSON.parse(JSON.stringify(r)); desenhar(); window.scrollTo(0, 0); }; });
+    if ($('manual')) $('manual').onclick = function () { marcarHistorico(); UI.rev = { loja: 'superstore', data: hojeISO(), total: null, imposto: 0, itens: [{ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }] }; desenhar(); };
+    qsa('[data-ver]').forEach(function (b) { b.onclick = function () { var r = recibos().filter(function (x) { return x.id === b.dataset.ver; })[0]; if (!r) return; UI.rev = JSON.parse(JSON.stringify(r)); marcarHistorico(); desenhar(); window.scrollTo(0, 0); }; });
     if ($('ver-dic')) $('ver-dic').onclick = abrirDic;
+    if ($('mais-recibos')) $('mais-recibos').onclick = function () { UI.nRecibos = (UI.nRecibos || 20) + 20; desenhar(); };
     // Saudável: copiar o nome do produto para colar no Yuka (nome do Open Food Facts, se já buscado; senão o da busca)
     qsa('[data-copiar]').forEach(function (b) { b.onclick = function () {
       var k = b.dataset.copiar, p = M.produtos[k] || {}, o = p.off, inp = qsa('[data-busca="' + k + '"]')[0];
@@ -483,34 +524,43 @@ window.iniciarMercado = function (F) {
     if ($('orc-salvar')) $('orc-salvar').onclick = function () { gravar({ 'ajustes/orcamento': +$('orc').value || 0 }).then(function () { toast('Orçamento salvo'); }); };
   }
   function lerTexto() {
+    if (UI.aba !== 'recibo' || !$('r-erro')) return;
     var t = UI.texto || '';
     if (!t.trim()) { $('r-erro').textContent = 'Cole o texto do recibo primeiro.'; return; }
     var r = Leitor.ler(t);
-    if (!r.itens.length) { $('r-erro').textContent = 'Não encontrei itens com preço neste texto. Confira se copiou o recibo inteiro, ou use “Recibo em branco”.'; return; }
+    if (!r.itens.length) { mostrarCaixa('Não encontrei itens com preço no que foi copiado. Tire a foto de novo (recibo inteiro, bem iluminado) ou use “Digitar recibo à mão”.'); $('texto').value = t; return; }
     UI.rev = { loja: r.loja, data: r.data || hojeISO(), total: r.total, imposto: r.imposto, emparelhou: r.emparelhou, itens: r.itens.map(itemDoLeitor) };
-    desenhar(); window.scrollTo(0, 0);
+    marcarHistorico(); desenhar(); window.scrollTo(0, 0);
+  }
+  // fecha o recibo aberto; se o usuário mexeu em algo de um recibo salvo, ou é um recibo novo, confirma antes
+  function fecharRevisao(semPerguntar, doHistorico) {
+    var r = UI.rev; if (!r) return true;
+    if (!semPerguntar && (r._mudou || !r.id) && !window.confirm(r.id ? 'Sair sem salvar as mudanças deste recibo?' : 'Descartar este recibo sem salvar?')) return false;
+    UI.rev = null; UI.texto = ''; desenhar(); window.scrollTo(0, 0);
+    if (!doHistorico && history.state && history.state.mercado) { UI.ignorarPop = true; try { history.back(); } catch (e) {} }
+    return true;
   }
   function ligarRevisao() {
     var r = UI.rev;
     qsa('[data-f]').forEach(function (inp) {
-      inp.oninput = inp.onchange = function () { var it = r.itens[+inp.dataset.i], f = inp.dataset.f; it[f] = (f === 'qtd' || f === 'total') ? +inp.value : inp.value; if (f === 'qtd' || f === 'total') it.un = it.qtd ? Math.round(it.total / it.qtd * 100) / 100 : it.total;
+      inp.oninput = inp.onchange = function () { var it = r.itens[+inp.dataset.i], f = inp.dataset.f; it[f] = (f === 'qtd' || f === 'total') ? +inp.value : inp.value; if (f === 'qtd' || f === 'total') it.un = it.qtd ? Math.round(it.total / it.qtd * 100) / 100 : it.total; UI.rev._mudou = true; atualizarSoma();
         if (f === 'pt') { var d = Object.keys(M.dic).map(function (k) { return M.dic[k]; }).filter(function (x) { return x.pt === inp.value; })[0]; if (d) { it.cat = d.cat; var s = qsa('select[data-i="' + inp.dataset.i + '"]')[0]; if (s) s.value = d.cat; } } };
-      if (inp.dataset.f === 'total') inp.onblur = function () { desenhar(); };
     });
-    $('rv-loja').onchange = function () { r.loja = this.value; };
-    $('rv-data').onchange = function () { r.data = this.value; };
-    $('rv-total').onchange = function () { r.total = this.value === '' ? null : +this.value; desenhar(); };
-    $('rv-imp').onchange = function () { r.imposto = +this.value || 0; desenhar(); };
-    qsa('[data-rm]').forEach(function (b) { b.onclick = function () { r.itens.splice(+b.dataset.rm, 1); desenhar(); }; });
-    $('rv-mais').onclick = function () { r.itens.push({ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }); desenhar(); };
-    $('rv-cancelar').onclick = function () { UI.rev = null; UI.texto = ''; desenhar(); };
+    $('rv-loja').onchange = function () { r.loja = this.value; r._mudou = true; };
+    $('rv-data').onchange = function () { r.data = this.value; r._mudou = true; };
+    $('rv-total').oninput = $('rv-total').onchange = function () { r.total = this.value === '' ? null : +this.value; r._mudou = true; atualizarSoma(); };
+    $('rv-imp').oninput = $('rv-imp').onchange = function () { r.imposto = +this.value || 0; r._mudou = true; atualizarSoma(); };
+    qsa('[data-rm]').forEach(function (b) { b.onclick = function () { r.itens.splice(+b.dataset.rm, 1); r._mudou = true; desenhar(); }; });
+    $('rv-mais').onclick = function () { r.itens.push({ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }); r._mudou = true; desenhar(); setTimeout(function () { var l = qsa('input[data-f="pt"]').pop(); if (l) { l.scrollIntoView({ block: 'center' }); l.focus(); } }, 50); };
+    $('rv-cancelar').onclick = $('rv-voltar').onclick = function () { fecharRevisao(); };
     if ($('rv-apagar')) $('rv-apagar').onclick = function () {
-      var b = $('rv-apagar'); if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Confirmar apagar'; return; }
-      var m = {}; m['recibos/' + r.id] = null; gravar(m).then(function () { UI.rev = null; toast('Recibo apagado'); desenhar(); });
+      var b = $('rv-apagar'); if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Toque de novo para apagar'; setTimeout(function () { b.dataset.ok = ''; b.textContent = 'Apagar este recibo'; }, 4000); return; }
+      var m = {}; m['recibos/' + r.id] = null; gravar(m).then(function () { fecharRevisao(true); toast('Recibo apagado'); });
     };
     $('rv-salvar').onclick = function () {
-      var itens = r.itens.filter(function (i) { return (i.pt || '').trim() && +i.total; });
+      var itens = r.itens.filter(function (i) { return (i.pt || '').trim() && +i.total; }), fora = r.itens.length - itens.length;
       if (!itens.length) { $('rv-erro').textContent = 'Nenhum item com nome e valor.'; return; }
+      if (fora && this.dataset.fora !== '1') { this.dataset.fora = '1'; $('rv-erro').textContent = fora + (fora > 1 ? ' itens sem nome ou sem valor não serão salvos.' : ' item sem nome ou sem valor não será salvo.') + ' Toque em Salvar de novo para continuar.'; return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(r.data || '')) { $('rv-erro').textContent = 'Confira a data.'; return; }
       var dp = duplicado(r, totalRev(r));
       if (dp && this.dataset.ok !== '1') { this.dataset.ok = '1'; this.textContent = 'Salvar mesmo assim'; $('rv-erro').innerHTML = avisoDup(dp) + ' Se for outra compra igual, toque em <b>Salvar mesmo assim</b>.'; return; }
@@ -523,7 +573,7 @@ window.iniciarMercado = function (F) {
         var k = chave(i.pt); if (!M.produtos[k] || !M.produtos[k].en) { m['produtos/' + k + '/pt'] = i.pt.trim().slice(0, 80); m['produtos/' + k + '/cat'] = i.cat; if (i.raw) m['produtos/' + k + '/en'] = Leitor.expandir(i.raw).toLowerCase(); }
       });
       $('rv-salvar').disabled = true;
-      gravar(m).then(function () { UI.rev = null; UI.texto = ''; toast('Recibo salvo'); desenhar(); }, function () { $('rv-salvar').disabled = false; });
+      gravar(m).then(function () { fecharRevisao(true); toast('Recibo salvo'); }, function () { $('rv-salvar').disabled = false; });
     };
   }
   function editarQtd(k) {
@@ -531,8 +581,10 @@ window.iniciarMercado = function (F) {
     var auto = !(+((M.produtos[k] || {}).qtd) > 0);
     abrirFolha('<h3>' + esc(c.pt) + '</h3><p class="nota">' + (auto ? 'A quantidade vem da sua média por mês.' : 'Quantidade definida por você.') + '</p><label class="lb" for="f-qtd">Quantidade no mês</label><input class="in" id="f-qtd" type="number" min="0.1" step="0.1" inputmode="decimal" value="' + esc(i.qtd) + '">' +
       '<label class="lb" for="f-loja">Onde comprar</label><select class="in" id="f-loja"><option value="">Mais barato</option>' + LOJAS.map(function (l) { return '<option value="' + l.id + '"' + (l.id === i.loja ? ' selected' : '') + '>' + esc(l.n) + '</option>'; }).join('') + '</select>' +
-      '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (auto ? '' : '<button class="btn" id="f-auto">Usar a média</button>') + '<button class="btn" id="f-fechar">Cancelar</button></div>');
-    $('f-fechar').onclick = fecharFolha;
+      '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (auto ? '' : '<button class="btn" id="f-auto">Usar a média</button>') + '<button class="btn" id="f-fechar">Cancelar</button></div>' +
+      '<div style="text-align:center;margin-top:16px"><button class="btn" id="f-tirar" style="color:#b91c1c;border-color:#fecaca">Tirar da lista</button></div>');
+    $('f-fechar').onclick = function () { fecharFolha(); };
+    $('f-tirar').onclick = function () { var b = this; if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Toque de novo para tirar'; return; } var m = {}; m['produtos/' + k + '/fixo'] = false; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(function () { fecharFolha(); toast('Tirado da lista.'); }); };
     var salva = function (v) { var m = {}; m['produtos/' + k + '/qtd'] = v; m['produtos/' + k + '/loja'] = $('f-loja').value || null; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(fecharFolha); };
     $('f-ok').onclick = function () { var v = +$('f-qtd').value; salva(v > 0 ? Math.round(v * 10) / 10 : null); };
     if ($('f-auto')) $('f-auto').onclick = function () { salva(null); };
@@ -541,7 +593,7 @@ window.iniciarMercado = function (F) {
   function cartaoFamilia() {
     if (!ehDono) return '<div class="card"><h2>Mercado compartilhado</h2><p class="nota" style="margin:0">Você está usando o Mercado da casa, liberado pelo administrador. Tudo o que você incluir, marcar ou salvar aparece para ele também.</p></div>';
     var ms = M.membros || {}, ids = Object.keys(ms);
-    return '<div class="card"><h2>Compartilhar com a família</h2><p class="nota">Quem você liberar vê e mexe em tudo do Mercado: lista, preços, recibos e gastos. Para liberar, a pessoa abre <b>minhacasaapp.com/mercado</b>, entra com o e-mail e a senha dela do MinhaCasa e te manda o código que aparece.</p>' +
+    return '<div class="card"><h2>Compartilhar com a família' + ajuda('familia') + '</h2><p class="nota">Quem você liberar vê e mexe em tudo do Mercado: lista, preços, recibos e gastos. Para liberar, a pessoa abre <b>minhacasaapp.com/mercado</b>, entra com o e-mail e a senha dela do MinhaCasa e te manda o código que aparece.</p>' +
       (ids.length ? ids.map(function (id) { return '<div class="linha"><div class="info"><div class="t">' + esc(ms[id].nome || 'Sem nome') + '</div><div class="s mono">' + esc(id.slice(0, 10)) + '…</div></div><button class="btn sm" data-mbrm="' + esc(id) + '">Remover</button></div>'; }).join('') : '') +
       '<label class="lb" for="mb-nome">Nome</label><input class="in" id="mb-nome" placeholder="Ex.: Esposa">' +
       '<label class="lb" for="mb-cod">Código que a pessoa te mandou</label><input class="in mono" id="mb-cod" autocapitalize="off" autocomplete="off" spellcheck="false">' +
@@ -562,8 +614,8 @@ window.iniciarMercado = function (F) {
   function abrirDic() {
     var ks = Object.keys(M.dic).sort(function (a, b) { return M.dic[a].pt.localeCompare(M.dic[b].pt); });
     abrirFolha('<h3>Nomes aprendidos</h3><p class="nota">Código do recibo → seu nome. Apague um para o app perguntar de novo.</p>' + ks.map(function (k) { return '<div class="linha"><div class="info"><div class="t" style="font-size:14px">' + esc(M.dic[k].pt) + '</div><div class="s mono">' + esc(k.replace(/-/g, ' ').toUpperCase()) + ' · ' + esc(M.dic[k].cat) + '</div></div><button class="btn sm" data-dicrm="' + esc(k) + '">Apagar</button></div>'; }).join('') + '<button class="btn cheio" id="f-fechar" style="margin-top:12px">Fechar</button>');
-    $('f-fechar').onclick = fecharFolha;
-    qsa('[data-dicrm]').forEach(function (b) { b.onclick = function () { var m = {}; m['dic/' + b.dataset.dicrm] = null; gravar(m).then(function () { b.closest('.linha').remove(); }); }; });
+    $('f-fechar').onclick = function () { fecharFolha(); };
+    qsa('[data-dicrm]').forEach(function (b) { b.onclick = function () { if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Confirmar'; return; } var m = {}; m['dic/' + b.dataset.dicrm] = null; gravar(m).then(function () { b.closest('.linha').remove(); }); }; });
   }
   function editarPreco(k, loja) {
     var c = catalogo()[k]; if (!c) return;
@@ -575,7 +627,7 @@ window.iniciarMercado = function (F) {
       (l.busca ? '<p class="nota" style="margin-top:10px"><a href="' + l.busca + termo + '" target="_blank" rel="noopener">Procurar no site da ' + esc(l.n) + '</a></p>' : '') +
       '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (atual ? '<button class="btn" id="f-apagar">Apagar</button>' : '') + '<button class="btn" id="f-fechar">Cancelar</button></div>');
     setTimeout(function () { if ($('f-preco')) $('f-preco').focus(); }, 60);
-    $('f-fechar').onclick = fecharFolha;
+    $('f-fechar').onclick = function () { fecharFolha(); };
     var salva = function (v) { var m = {}; m['produtos/' + k + '/precos/' + loja] = v; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(function () { fecharFolha(); toast('Preço salvo'); }); };
     $('f-ok').onclick = function () { var v = parseFloat($('f-preco').value); if (!(v > 0)) { fecharFolha(); return; } salva({ p: Math.round(v * 100) / 100, data: hojeISO(), fonte: $('f-fonte').value }); };
     if ($('f-apagar')) $('f-apagar').onclick = function () { salva(null); };
