@@ -91,7 +91,7 @@ label.lb{display:block;font-size:12.5px;font-weight:800;color:#475569;margin:12p
 .barra-voltar span{font-size:13.5px;color:#475569;font-weight:600}
 .acoes-fixas{position:sticky;bottom:0;z-index:4;background:#f1f5f9;padding:10px 0 calc(env(safe-area-inset-bottom) + 10px);margin-top:4px;border-top:1px solid #e2e8f0}
 .ajuda{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;font-weight:800;font-size:14px;cursor:pointer;padding:0;margin-left:8px;vertical-align:middle;flex:none}
-.ajuda::after{content:'';position:absolute;inset:-9px}
+.ajuda::after{content:'';position:absolute;inset:-6px -9px}
 .ajuda{position:relative}
 .kpi-ajuda{display:flex;align-items:center;gap:6px;cursor:pointer}
 .kpi-ajuda .ajuda{margin:0}
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script src="../config.js"></script>
 <script src="leitor.js?v=8"></script>
-<script src="mercado.js?v=30"></script>
+<script src="mercado.js?v=31"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';

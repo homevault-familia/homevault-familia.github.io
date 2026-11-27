@@ -324,7 +324,7 @@ window.iniciarMercado = function (F) {
     'Then one line per product, in receipt order:\n' +
     'ITEM|name as printed|quantity|unit price|line total|specific product name in Brazilian Portuguese, e.g. Framboesa, Kiwi dourado, Macarrão (never a generic word like Frutas)|category\n' +
     'Category must be one of: Hortifruti, Carnes e peixes, Laticínios e ovos, Padaria, Mercearia, Congelados, Bebidas, Lanches e doces, Limpeza, Higiene, Bebê e pet, Outros.\n' +
-    'Numbers with a dot, no $ sign. Weighed items: quantity is the weight. Apply discounts to the item. Never list subtotal, total, tax, payment, card or change as items. The line totals plus tax must equal TOTAL; if not, re-check the prices.';
+    'Numbers with a dot, no $ sign. Weighed items: quantity is the weight. Apply discounts to the item. Bottle deposits, eco fees and environmental fees ARE items: list each one as ITEM with category Outros (e.g. ITEM|DEPOSIT|1|3.20|3.20|Depósito de garrafa|Outros). Never list subtotal, total, tax, payment, card or change as items. The line totals plus tax must equal TOTAL; if not, re-check the prices.';
   function telaAjustes() {
     return cartaoFamilia() + '<div class="card"><h2>Instalar o atalho no iPhone' + ajuda('atalho') + '</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
       '<ol class="passos"><li>Toque no botão abaixo.</li><li>Toque em <b>Get Shortcut</b> (Obter atalho) e depois em <b>Add Shortcut</b> (Adicionar atalho).</li><li>Deixe o nome <b>Mercado</b>, sem mudar.</li></ol>' +
