@@ -259,18 +259,28 @@ window.iniciarMercado = function (F) {
     if (fora.length) h += '<div class="card"><h2>Outros itens já comprados</h2><p class="nota">Toque para colocar na lista.</p><div class="chips">' + fora.map(function (c) { return '<button class="chip" data-fixar="' + esc(c.k) + '">+ ' + esc(c.pt) + '</button>'; }).join('') + '</div></div>';
     return h;
   }
+  function mostrarCaixa(msg) { $('caixa').style.display = ''; $('texto').focus(); $('r-erro').textContent = msg; }
+  var PEDIDO_IA = 'Read the attached store receipt photo. Reply ONLY with these lines, no other text:\n' +
+    'LOJA|store name\nDATA|YYYY-MM-DD\nTOTAL|total paid\nIMPOSTO|total tax, 0 if none\n' +
+    'Then one line per product, in receipt order:\n' +
+    'ITEM|name as printed|quantity|unit price|line total|specific product name in Brazilian Portuguese, e.g. Framboesa, Kiwi dourado, Macarrão (never a generic word like Frutas)|category\n' +
+    'Category must be one of: Hortifruti, Carnes e peixes, Laticínios e ovos, Padaria, Mercearia, Congelados, Bebidas, Lanches e doces, Limpeza, Higiene, Bebê e pet, Outros.\n' +
+    'Numbers with a dot, no $ sign. Weighed items: quantity is the weight. Apply discounts to the item. Never list subtotal, total, tax, payment, card or change as items. The line totals plus tax must equal TOTAL; if not, re-check the prices.';
   function telaRecibo() {
     if (UI.rev) return telaRevisar();
     var h = '<div class="card"><h2>Novo recibo</h2>' +
-      // Roda o atalho "Mercado" do iPhone (foto → IA da Apple → volta aqui em #recibo)
-      '<a class="btn pri cheio" id="atalho" href="shortcuts://run-shortcut?name=Mercado" style="min-height:56px;font-size:17px;display:flex;align-items:center;justify-content:center;text-decoration:none">📷 Foto do recibo (atalho)</a>' +
-      '<p class="nota" style="margin:6px 0 10px">Abre o atalho <b>Mercado</b> do iPhone. Depois da foto, toque em <b>Colar</b>.</p>' +
-      '<button class="btn cheio" id="escanear">Escanear com a câmera (sem atalho)</button>' +
-      '<div id="dica-scan" class="nota" style="display:none;background:#eff6ff;border-radius:12px;padding:12px;margin:10px 0 0">' +
-      '<b>Agora, na caixa branca abaixo:</b><ol class="passos" style="margin-top:6px"><li><b>Toque e segure</b> dentro da caixa até aparecer o menu.</li><li>Toque em <b>Scan Text</b> (ícone de texto com moldura, às vezes atrás da setinha <b>›</b>).</li><li>Aponte a câmera para o recibo, espere o texto aparecer e toque em <b>Insert</b>.</li></ol><b>Recibo comprido?</b> Escaneie em partes: primeiro a de cima (os itens), toque em <b>Insert</b>, depois toque e segure no fim do texto e escaneie a parte de baixo (até o TOTAL). Quando o TOTAL chegar, o app lê sozinho.</div>' +
-      '<label class="lb" for="texto">Texto do recibo</label><textarea class="in" id="texto" placeholder="Toque e segure aqui → Scan Text">' + esc(UI.texto) + '</textarea>' +
-      '<div class="grupo-btn" style="margin-top:10px"><button class="btn" id="ler">Ler texto</button><button class="btn" id="colar">Colar</button><button class="btn" id="limpar">Limpar</button><button class="btn" id="manual">Recibo em branco</button></div><div class="erro" id="r-erro"></div>' +
-      '<details style="margin-top:10px"><summary class="nota" style="cursor:pointer">Já tirou a foto antes?</summary><ol class="passos"><li>No app <b>Fotos</b>, abra a foto, toque e segure no texto → <b>Select All</b> → <b>Copy</b>.</li><li>Volte aqui e toque em <b>Colar</b>.</li></ol></details></div>';
+      // Caminho principal: atalho "Mercado" do iPhone (foto → IA da Apple → volta aqui em #recibo) e depois Colar
+      '<a class="btn pri cheio" id="atalho" href="shortcuts://run-shortcut?name=Mercado" style="min-height:56px;font-size:17px;display:flex;align-items:center;justify-content:center;text-decoration:none">📷 1. Foto do recibo</a>' +
+      '<button class="btn cheio" id="colar" style="min-height:52px;font-size:17px;margin-top:10px">📋 2. Colar o recibo</button>' +
+      '<p class="nota" style="margin:8px 0 0">O botão 1 abre o atalho <b>Mercado</b>. Depois da foto, o app volta aqui: toque no 2.</p><div class="erro" id="r-erro"></div>' +
+      // caixa de reserva: só aparece se o navegador não deixar ler a área de transferência
+      '<div id="caixa" style="display:' + (UI.texto ? '' : 'none') + ';margin-top:10px"><textarea class="in" id="texto" placeholder="Toque e segure aqui → Colar">' + esc(UI.texto) + '</textarea>' +
+      '<div class="grupo-btn" style="margin-top:8px"><button class="btn" id="ler">Ler texto</button></div></div>' +
+      '<div class="grupo-btn" style="margin-top:10px"><button class="btn sm" id="manual">Recibo em branco</button></div>' +
+      // sem IA da Apple: qualquer app de IA que leia foto (ChatGPT, Gemini, Copilot, Claude) devolve o mesmo formato
+      '<details style="margin-top:14px"><summary class="nota" style="cursor:pointer">Não tem a IA da Apple?</summary>' +
+      '<ol class="passos"><li>Toque em <b>Copiar pedido para a IA</b>.</li><li>Abra um app de IA que leia foto (ChatGPT, Gemini, Copilot ou Claude), <b>cole o pedido</b> e mande a <b>foto do recibo</b>.</li><li>Copie a resposta, volte aqui e toque em <b>2. Colar o recibo</b>.</li></ol>' +
+      '<button class="btn cheio" id="copiar-pedido">Copiar pedido para a IA</button></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
     h += '<div class="card"><h2>Recibos salvos</h2>' + (rs.length ? rs.slice(0, 40).map(function (r) {
       return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + ' · ' + esc(r.data) + '</div><div class="s">' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Ver</button></div>';
@@ -406,14 +416,17 @@ window.iniciarMercado = function (F) {
       if (this.value.length - (UI.inicio || 0) > 40 && /\d[.,]\d{2}/.test(this.value) && /\bTOTAL\b/i.test(this.value) && /\d[.,]\d{2}[\s\S]*\d[.,]\d{2}[\s\S]*\d[.,]\d{2}/.test(this.value)) UI.auto = setTimeout(lerTexto, 1200);
     };
     if ($('texto')) $('texto').onfocus = function () { UI.inicio = this.value.length; };
-    if ($('escanear')) $('escanear').onclick = function () { $('dica-scan').style.display = ''; $('texto').focus(); $('texto').scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+    if ($('copiar-pedido')) $('copiar-pedido').onclick = function () {
+      var b = this, ok = function () { b.textContent = 'Pedido copiado ✓ Agora abra o app de IA'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(PEDIDO_IA).then(ok, function () { mostrarCaixa('Copie o pedido abaixo.'); $('texto').value = PEDIDO_IA; });
+      else { mostrarCaixa('Copie o pedido abaixo.'); $('texto').value = PEDIDO_IA; }
+    };
     if ($('colar')) $('colar').onclick = function () {
-      if (!navigator.clipboard || !navigator.clipboard.readText) { $('texto').focus(); $('r-erro').textContent = 'Toque e segure na caixa abaixo e escolha Colar.'; return; }
-      navigator.clipboard.readText().then(function (t) { if (!t.trim()) { $('r-erro').textContent = 'A área de transferência está vazia. Copie o texto do recibo no app Fotos.'; return; } UI.texto = t; lerTexto(); },
-        function () { $('texto').focus(); $('r-erro').textContent = 'Toque e segure na caixa abaixo e escolha Colar.'; });
+      if (!navigator.clipboard || !navigator.clipboard.readText) { mostrarCaixa('Toque e segure na caixa abaixo e escolha Colar.'); return; }
+      navigator.clipboard.readText().then(function (t) { if (!t.trim()) { $('r-erro').textContent = 'Não há nada copiado. Toque primeiro em 1. Foto do recibo.'; return; } UI.texto = t; lerTexto(); },
+        function () { mostrarCaixa('Toque e segure na caixa abaixo e escolha Colar.'); });
     };
     if ($('ler')) $('ler').onclick = function () { UI.texto = $('texto').value; lerTexto(); };
-    if ($('limpar')) $('limpar').onclick = function () { UI.texto = ''; $('texto').value = ''; UI.inicio = 0; $('r-erro').textContent = ''; $('texto').focus(); };
     if ($('manual')) $('manual').onclick = function () { UI.rev = { loja: 'superstore', data: hojeISO(), total: null, imposto: 0, itens: [{ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }] }; desenhar(); };
     qsa('[data-ver]').forEach(function (b) { b.onclick = function () { var r = recibos().filter(function (x) { return x.id === b.dataset.ver; })[0]; if (!r) return; UI.rev = JSON.parse(JSON.stringify(r)); desenhar(); window.scrollTo(0, 0); }; });
     if ($('ver-dic')) $('ver-dic').onclick = abrirDic;
