@@ -86,6 +86,8 @@ var Leitor = (function () {
       // OCR do Atalhos: lixo depois do preço ("$2.84 0）", "$9.97日") e "D" lido como "0"
       l = l.replace(/[^\x20-\x7E]+$/, '').trim();
       l = l.replace(/(\d[.,]\d{2})\s+[0O]\)?$/, '$1 D');
+      // linha só de preço com marca grudada: "$4.060", "$4.97D"
+      l = l.replace(/^(-?\$\s?\d{1,4}[.,]\d{2})\s?[A-Z0-9)]{0,2}$/i, '$1');
       return l;
     }).filter(Boolean);
     var itens = [], total = null, imposto = 0;
@@ -93,6 +95,7 @@ var Leitor = (function () {
       var lim = limpar(raw); if (!/[A-Z]{2,}/.test(lim)) return null;
       var it = { raw: lim, qtd: 1, un: tot, total: tot };
       if (q && (q.peso || Math.abs(q.qtd * q.un - tot) < 0.06)) { it.qtd = q.qtd; it.un = q.un; }
+      if (q && q.peso && q.qtd > 0 && Math.abs(q.qtd * q.un - tot) > 0.02) it.un = Math.round(tot / q.qtd * 100) / 100;
       itens.push(it); return it;
     }
     // 1) classifica cada linha
@@ -141,7 +144,8 @@ var Leitor = (function () {
       if (c.t === 'codigo') return;
       if (c.t === 'qtd') {
         if (c.v != null && pend) { ultimo = addItem(pend, c.v, c.q); pend = null; return; }
-        if (ultimo && (c.q.peso || Math.abs(c.q.qtd * c.q.un - ultimo.total) < 0.06)) { ultimo.qtd = c.q.qtd; ultimo.un = c.q.un; return; }
+        if (ultimo && (c.q.peso || Math.abs(c.q.qtd * c.q.un - ultimo.total) < 0.06)) { ultimo.qtd = c.q.qtd; ultimo.un = c.q.un;
+          if (c.q.peso && c.q.qtd > 0 && Math.abs(c.q.qtd * c.q.un - ultimo.total) > 0.02) ultimo.un = Math.round(ultimo.total / c.q.qtd * 100) / 100; return; }
         pendQtd = c.q; return;
       }
       if (c.t === 'desc') { var x = itens[itens.length - 1]; if (x) { x.total = Math.round((x.total - c.v) * 100) / 100; x.un = Math.round(x.total / x.qtd * 100) / 100; } return; }
