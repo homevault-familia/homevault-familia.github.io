@@ -1,4 +1,4 @@
-// Leitor de texto de recibo (Texto ao Vivo do iPhone). Sem rede, sem custo.
+// Leitor de texto de recibo: formato fixo da IA do atalho, ou texto cru do Texto ao Vivo. Sem rede, sem custo.
 // Usado pela página /mercado e pelos testes (node).
 var Leitor = (function () {
   var LOJAS = [
@@ -76,8 +76,40 @@ var Leitor = (function () {
     if (m) return { qtd: +m[1], un: num(m[3]) / +m[2] };
     return null;
   }
+  // Formato fixo devolvido pela IA da Apple no atalho (ação "Use Model"):
+  // LOJA|Walmart  DATA|2026-10-27  TOTAL|25.68  IMPOSTO|0
+  // ITEM|nome no recibo|qtd|preço unitário|total da linha|nome em português|categoria
+  var CATS_OK = ['Hortifruti', 'Carnes e peixes', 'Laticínios e ovos', 'Padaria', 'Mercearia', 'Congelados', 'Bebidas', 'Lanches e doces', 'Limpeza', 'Higiene', 'Bebê e pet', 'Outros'];
+  function valorIA(t) { var m = String(t || '').replace(/[^\d.,\-]/g, '').replace(',', '.'); var n = parseFloat(m); return isNaN(n) ? null : n; }
+  function lerIA(bruto, hoje) {
+    var linhas = bruto.split('\n').map(function (l) { return l.replace(/^[\s*\-`•]+|[\s`]+$/g, ''); }).filter(function (l) { return l.indexOf('|') > 0; });
+    var r = { loja: 'outro', data: null, itens: [], total: null, imposto: 0, ia: true, emparelhou: false };
+    linhas.forEach(function (l) {
+      var f = l.split('|').map(function (x) { return x.trim(); }), k = f[0].toUpperCase();
+      if (k === 'LOJA' || k === 'STORE') { var U = (f[1] || '').toUpperCase(); for (var i = 0; i < LOJAS.length; i++) if (LOJAS[i][1].test(U)) { r.loja = LOJAS[i][0]; break; } }
+      else if (k === 'DATA' || k === 'DATE') r.data = data(f[1] || '', hoje);
+      else if (k === 'TOTAL') r.total = valorIA(f[1]);
+      else if (k === 'IMPOSTO' || k === 'TAX') r.imposto = valorIA(f[1]) || 0;
+      else if (k === 'ITEM' && f.length >= 3) {
+        var tot = valorIA(f[4] != null && f[4] !== '' ? f[4] : f[f.length - 1]), q = valorIA(f[2]), un = valorIA(f[3]);
+        if (tot == null) return;
+        if (!q || q <= 0) q = 1;
+        if (un == null || Math.abs(q * un - tot) > 0.05) un = Math.round(tot / q * 100) / 100;
+        var raw = limpar(f[1] || '') || (f[1] || '').toUpperCase();
+        var it = { raw: raw, qtd: q, un: un, total: Math.round(tot * 100) / 100 };
+        it.en = f[5] ? f[5] : titulo(expandir(raw));
+        it.cat = CATS_OK.indexOf(f[6]) >= 0 ? f[6] : categoria(expandir(raw + ' ' + (f[5] || '').toUpperCase()));
+        r.itens.push(it);
+      }
+    });
+    r.imposto = Math.round(r.imposto * 100) / 100;
+    r.soma = Math.round(r.itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100;
+    if (!r.data) r.data = data(bruto, hoje);
+    return r;
+  }
   function ler(texto, hoje) {
     var bruto = String(texto || '').replace(/\r/g, '');
+    if (/^\s*[*\-`•]*\s*ITEM\s*\|/im.test(bruto) && /^\s*[*\-`•]*\s*TOTAL\s*\|/im.test(bruto)) return lerIA(bruto, hoje);
     var U = bruto.toUpperCase();
     var loja = 'outro';
     for (var i = 0; i < LOJAS.length; i++) if (LOJAS[i][1].test(U)) { loja = LOJAS[i][0]; break; }
