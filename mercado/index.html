@@ -58,6 +58,7 @@ label.lb{display:block;font-size:12.5px;font-weight:800;color:#475569;margin:12p
 .chip{border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:10px;padding:6px 9px;font-size:13px;cursor:pointer;text-align:left;min-height:40px;color:#0f172a}
 .chip b{display:block;font-variant-numeric:tabular-nums}
 .chip.melhor{background:#fef08a;border-color:#eab308}
+.chip.escolhido{border:2.5px solid #1d4ed8;box-shadow:0 0 0 2px #bfdbfe}
 .chip.falta{color:#94a3b8;border-style:dashed;background:#fff}
 .selo{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:999px;white-space:nowrap;background:#e2e8f0;color:#334155}
 .ns{display:inline-block;min-width:26px;text-align:center;border-radius:6px;font-weight:800;color:#fff;padding:2px 6px;font-size:13px}
@@ -201,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script src="../config.js"></script>
 <script src="leitor.js?v=8"></script>
-<script src="mercado.js?v=26"></script>
+<script src="mercado.js?v=27"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';

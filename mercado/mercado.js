@@ -396,14 +396,17 @@ window.iniciarMercado = function (F) {
     var completo = tot.filter(function (t) { return t.n === L.length; }).sort(function (a, b) { return a.s - b.s; })[0];
     var h = '<div class="kpis"><div class="kpi"><b>' + din(r.sempre) + '</b><span>pagando como sempre</span></div><div class="kpi verde"><b>' + din(r.melhor) + '</b><span>melhor preço em cada item</span></div>' +
       '<div class="kpi azul"><b>' + (completo ? din(completo.s) : '—') + '</b><span>' + (completo ? 'tudo na ' + esc(completo.l.n) : 'faltam preços para comparar um mercado só') + '</span></div></div>';
-    h += '<div class="card"><h2>Comparar preços' + ajuda('precos') + '</h2><p class="nota" style="margin:0">Os preços vêm dos seus recibos e do que você anota. Toque num mercado para anotar o preço que viu no folheto, no Flipp ou na prateleira. Compare sempre a mesma embalagem. Em amarelo, o mais barato.</p></div>';
+    h += '<div class="card"><h2>Comparar preços' + ajuda('precos') + '</h2><p class="nota" style="margin:0">Os preços vêm dos seus recibos e do que você anota. Toque num mercado para anotar o preço que viu no folheto, no Flipp ou na prateleira. Compare sempre a mesma embalagem. Em amarelo, o mais barato.</p>' +
+      '<p class="nota" style="margin:10px 0 0">Para montar a lista de compras: toque no mercado onde quer comprar cada item (ele fica marcado com 🛒), ou use o botão abaixo para escolher o mais barato de todos de uma vez.</p>' +
+      '<button class="btn pri cheio" id="lista-baratos" style="margin-top:10px">🛒 Montar a lista com os mais baratos</button>' +
+      '<button class="btn cheio" data-ver-lista="1" style="margin-top:8px">Ver a lista de compras por mercado</button></div>';
     var c = '';
     L.forEach(function (i) {
       if (i.cat !== c) { c = i.cat; h += '<div class="selo" style="margin:6px 0 8px">' + esc(c) + '</div>'; }
-      h += '<div class="card" style="padding:12px 14px"><div class="t" style="font-weight:700">' + esc(i.qtd) + ' × ' + esc(i.pt) + '</div><div class="chips">' +
+      h += '<div class="card" style="padding:12px 14px"><div class="t" style="font-weight:700">' + esc(i.qtd) + ' × ' + esc(i.pt) + '</div><div class="s" style="font-size:13.5px;color:#475569;margin-top:2px">' + (i.loja ? '🛒 Comprar na <b>' + esc(LN[i.loja]) + '</b>' : i.min ? 'Ainda sem mercado escolhido · mais barato: ' + esc(LN[i.min.loja]) : 'Sem preço ainda') + '</div><div class="chips">' +
         COMPARA.map(function (l) {
           var p = precoEm(i.k, l.id, cat), melhor = p && i.min && p.p === i.min.p;
-          return '<button class="chip' + (melhor ? ' melhor' : '') + (p ? '' : ' falta') + '" data-k="' + esc(i.k) + '" data-loja="' + l.id + '">' + esc(l.n) + (p ? '<b>' + din(p.p) + '</b><small>' + esc(p.fonte) + ' ' + esc((p.data || '').slice(5).split('-').reverse().join('/')) + '</small>' : '<b>+</b>') + '</button>';
+          return '<button class="chip' + (melhor ? ' melhor' : '') + (p ? '' : ' falta') + (i.loja === l.id ? ' escolhido' : '') + '" data-k="' + esc(i.k) + '" data-loja="' + l.id + '">' + (i.loja === l.id ? '🛒 ' : '') + esc(l.n) + (p ? '<b>' + din(p.p) + '</b><small>' + esc(p.fonte) + ' ' + esc((p.data || '').slice(5).split('-').reverse().join('/')) + '</small>' : '<b>+</b>') + '</button>';
         }).join('') + '</div></div>';
     });
     h += '<div class="card"><h2>Total da lista por mercado</h2>' + tot.map(function (t) { return '<div class="linha"><div class="info"><div class="t">' + esc(t.l.n) + '</div><div class="s">' + t.n + ' de ' + L.length + ' itens com preço</div></div><div class="valor">' + (t.n ? din(t.s) : '—') + '</div></div>'; }).join('') + '</div>';
@@ -517,7 +520,13 @@ window.iniciarMercado = function (F) {
     if ($('det-lista')) $('det-lista').ontoggle = function () { UI.abrirLista = this.open; var sp = this.querySelector('summary span'); if (sp) sp.textContent = this.open ? 'fechar ▴' : 'ver ▾'; };
     if (UI.rev && $('rv-salvar')) ligarRevisao();
     // preços
-    qsa('[data-loja]').forEach(function (b) { b.onclick = function () { editarPreco(b.dataset.k, b.dataset.loja); }; });
+    qsa('[data-loja]').forEach(function (b) { b.onclick = function () { if (precoEm(b.dataset.k, b.dataset.loja, catalogo())) escolherLoja(b.dataset.k, b.dataset.loja); else editarPreco(b.dataset.k, b.dataset.loja); }; });
+    if ($('lista-baratos')) $('lista-baratos').onclick = function () {
+      var m = {}, n = 0; listaDoMes().forEach(function (i) { if (i.min) { m['produtos/' + i.k + '/loja'] = i.min.loja; m['produtos/' + i.k + '/pt'] = i.pt; n++; } });
+      if (!n) { toast('Ainda não há preços para comparar.'); return; }
+      gravar(m).then(function () { toast(n + ' itens marcados no mercado mais barato'); irParaListaPorMercado(); });
+    };
+    qsa('[data-ver-lista]').forEach(function (b) { b.onclick = irParaListaPorMercado; });
     // saudável
     qsa('[data-off]').forEach(function (b) { b.onclick = function () { var k = b.dataset.off, q = qsa('[data-busca]').filter(function (x) { return x.dataset.busca === k; })[0].value.trim(); buscarOFF(k, q); }; });
     qsa('[data-escolher]').forEach(function (b) { b.onclick = function () { escolherOFF(b.dataset.escolher, +b.dataset.j); }; });
@@ -627,6 +636,20 @@ window.iniciarMercado = function (F) {
     abrirFolha('<h3>Nomes aprendidos</h3><p class="nota">Código do recibo → seu nome. Apague um para o app perguntar de novo.</p>' + ks.map(function (k) { return '<div class="linha"><div class="info"><div class="t" style="font-size:14px">' + esc(M.dic[k].pt) + '</div><div class="s mono">' + esc(k.replace(/-/g, ' ').toUpperCase()) + ' · ' + esc(M.dic[k].cat) + '</div></div><button class="btn sm" data-dicrm="' + esc(k) + '">Apagar</button></div>'; }).join('') + '<button class="btn cheio" id="f-fechar" style="margin-top:12px">Fechar</button>');
     $('f-fechar').onclick = function () { fecharFolha(); };
     qsa('[data-dicrm]').forEach(function (b) { b.onclick = function () { if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Confirmar'; return; } var m = {}; m['dic/' + b.dataset.dicrm] = null; gravar(m).then(function () { b.closest('.linha').remove(); }); }; });
+  }
+  function irParaListaPorMercado() { UI.agrupar = 'loja'; UI.abrirLista = true; qsa('#abas button').forEach(function (x) { if (x.dataset.aba === 'lista') x.click(); }); setTimeout(function () { if ($('det-lista')) $('det-lista').scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 80); }
+  // tocar num mercado que já tem preço: escolher comprar ali, ou mudar o preço
+  function escolherLoja(k, loja) {
+    var c = catalogo()[k], p = precoEm(k, loja, catalogo()), atual = (M.produtos[k] || {}).loja === loja;
+    abrirFolha('<h3>' + esc(c.pt) + '</h3><p class="nota">' + esc(LN[loja]) + ' · ' + din(p.p) + '</p>' +
+      '<button class="btn pri cheio" id="f-aqui" style="min-height:52px">' + (atual ? '✓ Já está na lista para comprar aqui' : '🛒 Comprar este item na ' + esc(LN[loja])) + '</button>' +
+      (atual ? '<button class="btn cheio" id="f-tirar-loja" style="margin-top:8px">Não escolher mercado (usar o mais barato)</button>' : '') +
+      '<button class="btn cheio" id="f-preco-edit" style="margin-top:8px">Anotar outro preço</button>' +
+      '<button class="btn cheio" id="f-fechar" style="margin-top:8px">Cancelar</button>');
+    var grava = function (v, msg) { var m = {}; m['produtos/' + k + '/loja'] = v; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(function () { fecharFolha(); toast(msg); }); };
+    $('f-aqui').onclick = function () { if (atual) { fecharFolha(); return; } grava(loja, 'Vai para a lista na ' + LN[loja]); };
+    if ($('f-tirar-loja')) $('f-tirar-loja').onclick = function () { grava(null, 'Mercado desmarcado'); };
+    $('f-preco-edit').onclick = function () { fecharFolha(true); editarPreco(k, loja); };
   }
   function editarPreco(k, loja) {
     var c = catalogo()[k]; if (!c) return;
