@@ -104,8 +104,25 @@ var Leitor = (function () {
     });
     r.imposto = Math.round(r.imposto * 100) / 100;
     r.soma = Math.round(r.itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100;
+    r.soma = corrigeDigito(r.itens, r.total, r.imposto, r.soma);
     if (!r.data) r.data = data(bruto, hoje);
     return r;
+  }
+  // OCR confunde dígitos parecidos (4/9, 1/7, 3/8...). Se trocar 1 dígito de 1 preço fecha o total, corrige.
+  function corrigeDigito(itens, total, imposto, soma) {
+    if (total != null && Math.abs(soma + imposto - total) > 0.005) {
+      var PAR = { '0': '86', '1': '7', '2': '7', '3': '8', '4': '9', '5': '6', '6': '58', '7': '12', '8': '036', '9': '4' }, achou = [];
+      itens.forEach(function (it, ix) {
+        if (it.qtd !== 1) return;
+        var t = it.total.toFixed(2);
+        for (var p = 0; p < t.length; p++) { var ds = PAR[t[p]]; if (!ds) continue;
+          for (var q = 0; q < ds.length; q++) { var nv = parseFloat(t.slice(0, p) + ds[q] + t.slice(p + 1));
+            if (Math.abs(soma - it.total + nv + imposto - total) < 0.005) achou.push([ix, nv]); } }
+      });
+      if (achou.length === 1) { var ic = itens[achou[0][0]]; ic.lido = ic.total; ic.total = ic.un = achou[0][1]; ic.corrigido = true;
+        soma = Math.round(itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100; }
+    }
+    return soma;
   }
   function ler(texto, hoje) {
     var bruto = String(texto || '').replace(/\r/g, '');
@@ -208,19 +225,7 @@ var Leitor = (function () {
         var best = null; Object.keys(cnt).forEach(function (k) { var v = +k; if (best == null || cnt[k] > cnt[best] || cnt[k] === cnt[best] && v > best) best = v; });
         if (best != null && (total == null || cnt[best] > 1)) total = best; }
     }
-    // OCR confunde dígitos parecidos (4/9, 1/7, 3/8...). Se trocar 1 dígito de 1 preço fecha o total, corrige.
-    if (total != null && Math.abs(soma + imposto - total) > 0.005) {
-      var PAR = { '0': '86', '1': '7', '2': '7', '3': '8', '4': '9', '5': '6', '6': '58', '7': '12', '8': '036', '9': '4' }, achou = [];
-      itens.forEach(function (it, ix) {
-        if (it.qtd !== 1) return;
-        var t = it.total.toFixed(2);
-        for (var p = 0; p < t.length; p++) { var ds = PAR[t[p]]; if (!ds) continue;
-          for (var q = 0; q < ds.length; q++) { var nv = parseFloat(t.slice(0, p) + ds[q] + t.slice(p + 1));
-            if (Math.abs(soma - it.total + nv + imposto - total) < 0.005) achou.push([ix, nv]); } }
-      });
-      if (achou.length === 1) { var ic = itens[achou[0][0]]; ic.lido = ic.total; ic.total = ic.un = achou[0][1]; ic.corrigido = true;
-        soma = Math.round(itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100; }
-    }
+    soma = corrigeDigito(itens, total, imposto, soma);
     return { loja: loja, data: data(bruto, hoje), itens: itens, total: total, imposto: Math.round(imposto * 100) / 100, soma: soma, emparelhou: emparelhou };
   }
   function chave(t) {
