@@ -186,9 +186,22 @@ textarea.in{font-size:16px}
 <div class="fundo" id="fundo"><div class="folha" id="folha"></div></div>
 <div class="toast" id="toast"></div>
 
+<script>
+// Atualização automática: se o site tem uma versão mais nova do que esta cópia guardada no iPhone, recarrega com ela
+var mercadoHash0 = location.hash;
+document.addEventListener('DOMContentLoaded', function () {
+  try {
+    var atual = (document.querySelector('script[src^="mercado.js?v="]') || {}).getAttribute ? document.querySelector('script[src^="mercado.js?v="]').getAttribute('src') : '';
+    fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m = t.match(/mercado\.js\?v=(\d+)/), novo = m ? 'mercado.js?v=' + m[1] : '';
+      if (novo && atual && novo !== atual && sessionStorage.getItem('mercado-v') !== novo) { sessionStorage.setItem('mercado-v', novo); location.replace(location.pathname + '?v=' + m[1] + (location.hash || mercadoHash0)); }
+    }).catch(function () {});
+  } catch (e) {}
+});
+</script>
 <script src="../config.js"></script>
 <script src="leitor.js?v=8"></script>
-<script src="mercado.js?v=22"></script>
+<script src="mercado.js?v=23"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
