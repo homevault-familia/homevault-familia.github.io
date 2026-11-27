@@ -298,7 +298,7 @@ window.iniciarMercado = function (F) {
       '<div class="grupo-btn" style="margin-top:8px"><button class="btn" id="ler">Ler texto</button></div></div>' +
       '<div class="grupo-btn" style="margin-top:10px"><button class="btn sm" id="manual">Recibo em branco</button></div>' +
       // sem IA da Apple: qualquer app de IA que leia foto (ChatGPT, Gemini, Copilot, Claude) devolve o mesmo formato
-      '<details style="margin-top:14px"><summary class="nota" style="cursor:pointer">Não tem a IA da Apple?</summary>' +
+      '<details style="margin-top:14px"><summary class="btn cheio" style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:center;gap:6px">🤖 Não tem a IA da Apple? Use o ChatGPT ou o Gemini</summary>' +
       '<ol class="passos"><li>Toque em <b>Copiar pedido para a IA</b>.</li><li>Abra um app de IA que leia foto (ChatGPT, Gemini, Copilot ou Claude), <b>cole o pedido</b> e mande a <b>foto do recibo</b>.</li><li>Copie a resposta, volte aqui e toque em <b>2. Colar o recibo</b>.</li></ol>' +
       '<button class="btn cheio" id="copiar-pedido">Copiar pedido para a IA</button></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
