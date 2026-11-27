@@ -281,7 +281,7 @@ window.iniciarMercado = function (F) {
     'Category must be one of: Hortifruti, Carnes e peixes, Laticínios e ovos, Padaria, Mercearia, Congelados, Bebidas, Lanches e doces, Limpeza, Higiene, Bebê e pet, Outros.\n' +
     'Numbers with a dot, no $ sign. Weighed items: quantity is the weight. Apply discounts to the item. Never list subtotal, total, tax, payment, card or change as items. The line totals plus tax must equal TOTAL; if not, re-check the prices.';
   function telaAjustes() {
-    return '<div class="card"><h2>Instalar o atalho no iPhone</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
+    return cartaoFamilia() + '<div class="card"><h2>Instalar o atalho no iPhone</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
       '<ol class="passos"><li>Toque no botão abaixo.</li><li>Toque em <b>Get Shortcut</b> (Obter atalho) e depois em <b>Add Shortcut</b> (Adicionar atalho).</li><li>Deixe o nome <b>Mercado</b>, sem mudar.</li></ol>' +
       '<a class="btn cheio" href="' + ATALHO_URL + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Instalar o atalho Mercado</a>' +
       '<p class="nota" style="margin-top:8px">O atalho usa a IA da Apple (iPhone 15 Pro ou mais novo). Sem ela, use <b>Não tem a IA da Apple?</b> na aba <b>Recibo</b>. Se o iPhone pedir para baixar o app <b>Atalhos</b> (Shortcuts), baixe na App Store: é gratuito, da Apple.</p></div>';
@@ -400,7 +400,7 @@ window.iniciarMercado = function (F) {
     return kpis() + '<div class="card"><h2>Orçamento mensal do mercado</h2><div class="grade3" style="grid-template-columns:minmax(0,10em) auto;justify-content:start"><input class="in" type="number" min="0" step="10" inputmode="decimal" id="orc" value="' + esc(orc ? dec2(orc) : '') + '" placeholder="CA$" aria-label="Orçamento mensal em dólares"><button class="btn" id="orc-salvar">Salvar</button></div></div>' +
       '<div class="card"><h2>Por mês</h2>' + barras(meses, Math.max(orc, mx(meses)), orc) + (orc ? '<p class="nota" style="margin-top:8px">Em vermelho, os meses acima de ' + din(orc) + '.</p>' : '') + '</div>' +
       '<div class="card"><h2>Este mês por categoria</h2>' + barras(cats, mx(cats)) + '</div>' +
-      '<div class="card"><h2>Por mercado · últimos 3 meses</h2>' + barras(lojas, mx(lojas)) + '</div>' + cartaoFamilia();
+      '<div class="card"><h2>Por mercado · últimos 3 meses</h2>' + barras(lojas, mx(lojas)) + '</div>';
   }
 
   // ── ações ──
