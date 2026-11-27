@@ -260,6 +260,8 @@ window.iniciarMercado = function (F) {
     return h;
   }
   function mostrarCaixa(msg) { $('caixa').style.display = ''; $('texto').focus(); $('r-erro').textContent = msg; }
+  // Link do iCloud do atalho "Mercado" (Shortcuts → segurar → Share → Copy iCloud Link). Trocar aqui se o atalho mudar.
+  var ATALHO_URL = 'https://www.icloud.com/shortcuts/932eadef8398443785cf0df7b56a0ae7';
   var PEDIDO_IA = 'Read the attached store receipt photo. Reply ONLY with these lines, no other text:\n' +
     'LOJA|store name\nDATA|YYYY-MM-DD\nTOTAL|total paid\nIMPOSTO|total tax, 0 if none\n' +
     'Then one line per product, in receipt order:\n' +
@@ -282,6 +284,10 @@ window.iniciarMercado = function (F) {
       '<ol class="passos"><li>Toque em <b>Copiar pedido para a IA</b>.</li><li>Abra um app de IA que leia foto (ChatGPT, Gemini, Copilot ou Claude), <b>cole o pedido</b> e mande a <b>foto do recibo</b>.</li><li>Copie a resposta, volte aqui e toque em <b>2. Colar o recibo</b>.</li></ol>' +
       '<button class="btn cheio" id="copiar-pedido">Copiar pedido para a IA</button></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
+    h += '<div class="card"><h2>Instalar o atalho no iPhone</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
+      '<ol class="passos"><li>Toque no botão abaixo.</li><li>Toque em <b>Get Shortcut</b> (Obter atalho) e depois em <b>Add Shortcut</b> (Adicionar atalho).</li><li>Deixe o nome <b>Mercado</b>, sem mudar.</li></ol>' +
+      '<a class="btn cheio" href="' + ATALHO_URL + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Instalar o atalho Mercado</a>' +
+      '<p class="nota" style="margin-top:8px">O atalho usa a IA da Apple (iPhone 15 Pro ou mais novo). Sem ela, use <b>Não tem a IA da Apple?</b> acima. Se o iPhone pedir para baixar o app <b>Atalhos</b> (Shortcuts), baixe na App Store: é gratuito, da Apple.</p></div>';
     h += '<div class="card"><h2>Recibos salvos</h2>' + (rs.length ? rs.slice(0, 40).map(function (r) {
       return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + ' · ' + esc(r.data) + '</div><div class="s">' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Ver</button></div>';
     }).join('') : '<div class="vazio">Nenhum recibo ainda.</div>') + '</div>';
