@@ -61,6 +61,15 @@ window.iniciarMercado = function (F) {
   var UI = { aba: 'lista', rev: null, texto: '', off: {}, agrupar: 'cat' };
 
   if (window.MINHACASA_AMBIENTE !== 'producao') document.body.classList.add('teste');
+  // Atalho do iPhone (Tirar foto → Extrair texto → abrir minhacasaapp.com/mercado/?texto=…): já chega com o recibo
+  try {
+    var qs = new URLSearchParams(location.search), vindo = qs.get('texto');
+    if (vindo && vindo.trim()) {
+      UI.aba = 'recibo'; UI.texto = vindo; UI.doAtalho = true;
+      history.replaceState(null, '', location.pathname + location.hash);
+      qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x.dataset.aba === 'recibo'); });
+    }
+  } catch (e) {}
 
   function toast(t) { var el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(function () { el.style.display = 'none'; }, 3200); }
   function mostrar(v) { ['v-login', 'v-negado', 'v-app'].forEach(function (x) { $(x).style.display = x === v ? '' : 'none'; }); }
@@ -115,7 +124,7 @@ window.iniciarMercado = function (F) {
       parar = F.onValue(F.ref(DB, base), function (s) {
         var v = s.val() || {};
         M = { recibos: v.recibos || {}, produtos: v.produtos || {}, dic: v.dic || {}, ajustes: v.ajustes || {}, membros: v.membros || {} };
-        if (primeira) { primeira = false; mostrar('v-app'); }
+        if (primeira) { primeira = false; mostrar('v-app'); if (UI.doAtalho) { UI.doAtalho = false; desenhar(); lerTexto(); return; } }
         desenhar();
       }, function (e) { semAcesso(u, e); });
     });
