@@ -64,6 +64,12 @@ window.iniciarMercado = function (F) {
   // Atalho do iPhone (Tirar foto → Extrair texto → abrir minhacasaapp.com/mercado/?texto=…): já chega com o recibo
   try {
     var qs = new URLSearchParams(location.search), vindo = qs.get('texto');
+    // Atalho abre direto numa aba: minhacasaapp.com/mercado/#recibo ou ?aba=recibo
+    var abaPedida = (qs.get('aba') || location.hash.replace('#', '')).toLowerCase();
+    if (['lista', 'recibo', 'precos', 'saude', 'gastos'].indexOf(abaPedida) >= 0) {
+      UI.aba = abaPedida;
+      qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x.dataset.aba === abaPedida); });
+    }
     if (vindo && vindo.trim()) {
       UI.aba = 'recibo'; UI.texto = vindo; UI.doAtalho = true;
       history.replaceState(null, '', location.pathname + location.hash);
@@ -256,7 +262,10 @@ window.iniciarMercado = function (F) {
   function telaRecibo() {
     if (UI.rev) return telaRevisar();
     var h = '<div class="card"><h2>Novo recibo</h2>' +
-      '<button class="btn pri cheio" id="escanear" style="min-height:56px;font-size:17px">📷 Escanear recibo com a câmera</button>' +
+      // Roda o atalho "Mercado" do iPhone (foto → IA da Apple → volta aqui em #recibo)
+      '<a class="btn pri cheio" id="atalho" href="shortcuts://run-shortcut?name=Mercado" style="min-height:56px;font-size:17px;display:flex;align-items:center;justify-content:center;text-decoration:none">📷 Foto do recibo (atalho)</a>' +
+      '<p class="nota" style="margin:6px 0 10px">Abre o atalho <b>Mercado</b> do iPhone. Depois da foto, toque em <b>Colar</b>.</p>' +
+      '<button class="btn cheio" id="escanear">Escanear com a câmera (sem atalho)</button>' +
       '<div id="dica-scan" class="nota" style="display:none;background:#eff6ff;border-radius:12px;padding:12px;margin:10px 0 0">' +
       '<b>Agora, na caixa branca abaixo:</b><ol class="passos" style="margin-top:6px"><li><b>Toque e segure</b> dentro da caixa até aparecer o menu.</li><li>Toque em <b>Scan Text</b> (ícone de texto com moldura, às vezes atrás da setinha <b>›</b>).</li><li>Aponte a câmera para o recibo, espere o texto aparecer e toque em <b>Insert</b>.</li></ol><b>Recibo comprido?</b> Escaneie em partes: primeiro a de cima (os itens), toque em <b>Insert</b>, depois toque e segure no fim do texto e escaneie a parte de baixo (até o TOTAL). Quando o TOTAL chegar, o app lê sozinho.</div>' +
       '<label class="lb" for="texto">Texto do recibo</label><textarea class="in" id="texto" placeholder="Toque e segure aqui → Scan Text">' + esc(UI.texto) + '</textarea>' +
