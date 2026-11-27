@@ -31,6 +31,27 @@ window.iniciarMercado = function (F) {
   var LN = {}; LOJAS.forEach(function (l) { LN[l.id] = l.n; });
   var COMPARA = LOJAS.filter(function (l) { return l.id !== 'outro'; });
   var CATS = ['Hortifruti', 'Carnes e peixes', 'Laticínios e ovos', 'Padaria', 'Mercearia', 'Congelados', 'Bebidas', 'Lanches e doces', 'Limpeza', 'Higiene', 'Bebê e pet', 'Outros'];
+  var CAT_PT = [
+    ['Hortifruti', /banana|maçã|maca|laranja|limão|limao|uva|morango|mirtilo|pera|pêssego|manga|abacate|abacaxi|melancia|melão|kiwi|batata|tomate|cebola|alho|alface|espinafre|cenoura|brócolis|brocolis|couve|pepino|pimentão|cogumelo|abobrinha|abóbora|milho|salada|fruta|legume|verdura|hortifruti/],
+    ['Carnes e peixes', /frango|carne|boi|porco|peru|presunto|bacon|linguiça|linguica|salsicha|bife|picanha|costela|moída|moida|salmão|salmao|atum|peixe|camarão|camarao|bacalhau|frios|salame/],
+    ['Laticínios e ovos', /leite|ovo|queijo|iogurte|manteiga|creme de leite|requeijão|requeijao|margarina|nata|kefir/],
+    ['Padaria', /pão|pao|pães|bagel|tortilha|wrap|bolo|croissant|muffin|torrada/],
+    ['Congelados', /congelad|sorvete|pizza|nugget|batata frita|picolé/],
+    ['Bebidas', /café|cafe|chá|cha\b|suco|refrigerante|coca|água|agua|cerveja|vinho|bebida|energético/],
+    ['Lanches e doces', /chocolate|biscoito|bolacha|bala|doce|salgadinho|pipoca|barra de cereal|chips|nutella|sobremesa/],
+    ['Limpeza', /detergente|sabão|sabao|amaciante|água sanitária|agua sanitaria|desinfetante|esponja|saco de lixo|lixo|papel toalha|limpa|alvejante|lustra/],
+    ['Higiene', /papel higiênico|papel higienico|shampoo|xampu|condicionador|sabonete|pasta de dente|creme dental|escova de dente|desodorante|absorvente|lâmina|fio dental|lenço|hidratante/],
+    ['Bebê e pet', /fralda|lenço umedecido|bebê|bebe|ração|racao|cachorro|gato|areia/],
+    ['Mercearia', /arroz|feijão|feijao|macarrão|macarrao|massa|molho|farinha|açúcar|acucar|sal\b|óleo|oleo|azeite|vinagre|cereal|aveia|sopa|lata|enlatado|ketchup|maionese|mostarda|tempero|mel\b|geleia|amendoim/]
+  ];
+  var CAT_PRIMEIRO = [['Higiene', /papel higi/], ['Bebê e pet', /lenço umedecido|lenco umedecido/], ['Congelados', /batata frita|congelad/], ['Laticínios e ovos', /creme de leite/], ['Limpeza', /água sanitária|agua sanitaria|papel toalha/], ['Lanches e doces', /barra de cereal|batata chips/]];
+  function adivinharCat(nome) {
+    var t = String(nome || '').toLowerCase(), i;
+    for (i = 0; i < CAT_PRIMEIRO.length; i++) if (CAT_PRIMEIRO[i][1].test(t)) return CAT_PRIMEIRO[i][0];
+    for (i = 0; i < CAT_PT.length; i++) if (CAT_PT[i][1].test(t)) return CAT_PT[i][0];
+    var c = Leitor.categoria(Leitor.expandir(t.toUpperCase()));
+    return c === 'Outros' ? 'Mercearia' : c;
+  }
   var COMIDA = { 'Hortifruti': 1, 'Carnes e peixes': 1, 'Laticínios e ovos': 1, 'Padaria': 1, 'Mercearia': 1, 'Congelados': 1, 'Bebidas': 1, 'Lanches e doces': 1 };
 
   var app = F.initializeApp(window.HOMEVAULT_FIREBASE), A = F.getAuth(app), DB = F.getDatabase(app);
@@ -140,7 +161,7 @@ window.iniciarMercado = function (F) {
       var ult = c.compras.slice().sort(function (a, b) { return b.data.localeCompare(a.data); })[0] || null;
       var precos = COMPARA.map(function (l) { var p = precoEm(k, l.id, cat); return p ? Object.assign({ loja: l.id }, p) : null; }).filter(Boolean);
       var min = precos.reduce(function (a, b) { return !a || b.p < a.p ? b : a; }, null);
-      out.push({ k: k, pt: c.pt, cat: c.cat, qtd: qtd, ult: ult, precos: precos, min: min, meses: nMeses, marcado: pr.marcado === mesDe(hojeISO()) });
+      out.push({ k: k, pt: c.pt, cat: c.cat, qtd: qtd, ult: ult, precos: precos, min: min, meses: nMeses, marcado: pr.marcado === mesDe(hojeISO()), loja: LN[pr.loja] ? pr.loja : null });
     });
     return out.sort(function (a, b) { return CATS.indexOf(a.cat) - CATS.indexOf(b.cat) || a.pt.localeCompare(b.pt); });
   }
@@ -167,19 +188,20 @@ window.iniciarMercado = function (F) {
   function grupos(L) {
     var g = [], idx = {};
     L.forEach(function (i) {
-      var nome = UI.agrupar === 'loja' ? (i.min ? LN[i.min.loja] : 'Sem preço ainda') : i.cat;
+      var nome = UI.agrupar === 'loja' ? (i.loja ? LN[i.loja] : i.min ? LN[i.min.loja] : 'Qualquer mercado') : i.cat;
       if (!(nome in idx)) { idx[nome] = g.length; g.push({ nome: nome, itens: [] }); }
       g[idx[nome]].itens.push(i);
     });
-    if (UI.agrupar === 'loja') g.sort(function (a, b) { return (a.nome === 'Sem preço ainda') - (b.nome === 'Sem preço ainda') || b.itens.length - a.itens.length; });
+    if (UI.agrupar === 'loja') g.sort(function (a, b) { return (a.nome === 'Qualquer mercado') - (b.nome === 'Qualquer mercado') || b.itens.length - a.itens.length; });
     return g;
   }
+  function precoLista(i) { if (i.loja) { var p = i.precos.filter(function (x) { return x.loja === i.loja; })[0]; return p ? p.p : null; } return i.min ? i.min.p : null; }
   function textoLista(L) {
     var linhas = ['🛒 Lista do mercado — ' + mesBR(mesDe(hojeISO()))];
     grupos(L).forEach(function (g) {
-      var sub = g.itens.reduce(function (s, i) { return s + (i.min ? i.min.p * i.qtd : 0); }, 0);
+      var sub = g.itens.reduce(function (s, i) { var p = precoLista(i); return s + (p ? p * i.qtd : 0); }, 0);
       linhas.push('', '*' + g.nome + '*' + (UI.agrupar === 'loja' && sub ? ' (~' + din(sub) + ')' : ''));
-      g.itens.forEach(function (i) { linhas.push((i.marcado ? '☑ ' : '☐ ') + i.qtd + ' × ' + i.pt + (UI.agrupar !== 'loja' && i.min ? ' — ' + LN[i.min.loja] + ' ' + din(i.min.p) : '')); });
+      g.itens.forEach(function (i) { var onde = i.loja || (i.min && i.min.loja), p = precoLista(i); linhas.push((i.marcado ? '☑ ' : '☐ ') + i.qtd + ' × ' + i.pt + (UI.agrupar !== 'loja' && onde ? ' — ' + LN[onde] + (p ? ' ' + din(p) : '') : '')); });
     });
     var r = resumo(L);
     if (r.melhor) linhas.push('', 'Estimativa: ' + din(r.melhor));
@@ -197,7 +219,7 @@ window.iniciarMercado = function (F) {
   function cartaoIncluir() {
     return '<div class="card"><h2>Incluir na lista</h2><datalist id="nomes-l">' + nomesConhecidos().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>' +
       '<input class="in" id="add-nome" list="nomes-l" placeholder="Ex.: Café 925 g, detergente…" aria-label="Item para incluir">' +
-      '<div class="grade3" style="grid-template-columns:minmax(0,1fr) 5.5em auto;margin-top:6px"><select class="in" id="add-cat" aria-label="Categoria">' + CATS.map(function (c) { return '<option' + (c === 'Mercearia' ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>' +
+      '<div class="grade3" style="grid-template-columns:minmax(0,1fr) 5.5em auto;margin-top:6px"><label class="mini">Onde comprar<select class="in" id="add-loja"><option value="">Mais barato</option>' + LOJAS.map(function (l) { return '<option value="' + l.id + '">' + esc(l.n) + '</option>'; }).join('') + '</select></label>' +
       '<label class="mini">Qtd<input class="in" id="add-qtd" type="number" min="0.1" step="0.1" inputmode="decimal" value="1"></label><button class="btn pri" id="add-ok">Incluir</button></div><div class="erro" id="add-erro"></div></div>';
   }
   function telaLista() {
@@ -208,12 +230,12 @@ window.iniciarMercado = function (F) {
       '<p class="nota">' + (meses ? 'O que você comprou em pelo menos 2 dos últimos 3 meses (' + esc(meses) + ') e o que você incluiu. ' : '') + 'Comprando cada item onde é mais barato: <b>' + din(r.melhor) + '</b>' + (r.sempre > r.melhor ? ' em vez de ' + din(r.sempre) : '') + '. Toque no quadradinho para marcar o que já pegou.</p>' +
       '<div class="filtros"><button data-agrupar="cat" class="' + (UI.agrupar === 'cat' ? 'on' : '') + '">Por categoria</button><button data-agrupar="loja" class="' + (UI.agrupar === 'loja' ? 'on' : '') + '">Por mercado</button></div>';
     grupos(L).forEach(function (g) {
-      var sub = g.itens.reduce(function (s, i) { return s + (i.min ? i.min.p * i.qtd : 0); }, 0);
+      var sub = g.itens.reduce(function (s, i) { var p = precoLista(i); return s + (p ? p * i.qtd : 0); }, 0);
       h += '<div class="selo" style="margin:12px 0 2px">' + esc(g.nome) + (UI.agrupar === 'loja' && sub ? ' · ~' + din(sub) : '') + '</div>';
       g.itens.forEach(function (i) {
         h += '<div class="linha' + (i.marcado ? ' feito' : '') + '"><button class="caixa" data-marcar="' + esc(i.k) + '" aria-pressed="' + i.marcado + '" aria-label="Marcar ' + esc(i.pt) + '">' + (i.marcado ? '✓' : '') + '</button><div class="info"><div class="t">' + esc(i.qtd) + ' × ' + esc(i.pt) + '</div><div class="s">' +
-          (i.min ? (UI.agrupar === 'loja' ? din(i.min.p) + ' cada' : 'Mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p)) : 'Sem preço para comparar') + (i.ult && UI.agrupar !== 'loja' ? ' · última vez ' + din(i.ult.p) + ' (' + esc(LN[i.ult.loja] || '') + ')' : '') + '</div></div>' +
-          '<button class="btn sm" data-qtd="' + esc(i.k) + '" aria-label="Mudar quantidade de ' + esc(i.pt) + '">Qtd</button><button class="btn sm" data-tirar="' + esc(i.k) + '" aria-label="Tirar ' + esc(i.pt) + ' da lista">Tirar</button></div>';
+          (i.loja ? 'Comprar na ' + esc(LN[i.loja]) + (precoLista(i) ? ' · ' + din(precoLista(i)) : '') + (i.min && i.min.loja !== i.loja ? ' · mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p) : '') : i.min ? (UI.agrupar === 'loja' ? din(i.min.p) + ' cada' : 'Mais barato: ' + esc(LN[i.min.loja]) + ' ' + din(i.min.p)) : 'Sem preço para comparar') + (i.ult && UI.agrupar !== 'loja' ? ' · última vez ' + din(i.ult.p) + ' (' + esc(LN[i.ult.loja] || '') + ')' : '') + '</div></div>' +
+          '<button class="btn sm" data-qtd="' + esc(i.k) + '" aria-label="Editar ' + esc(i.pt) + '">Editar</button><button class="btn sm" data-tirar="' + esc(i.k) + '" aria-label="Tirar ' + esc(i.pt) + ' da lista">Tirar</button></div>';
       });
     });
     h += '<div class="grupo-btn" style="margin-top:14px"><button class="btn pri" id="compartilhar">Compartilhar</button><button class="btn" id="copiar-lista">Copiar</button>' + (marcados ? '<button class="btn" id="desmarcar">Desmarcar tudo</button>' : '') + '</div>' +
@@ -342,13 +364,14 @@ window.iniciarMercado = function (F) {
     if ($('desmarcar')) $('desmarcar').onclick = function () { var m = {}; listaDoMes().forEach(function (i) { if (i.marcado) m['produtos/' + i.k + '/marcado'] = null; }); gravar(m); };
     qsa('[data-qtd]').forEach(function (b) { b.onclick = function () { editarQtd(b.dataset.qtd); }; });
     if ($('add-nome')) {
-      $('add-nome').onchange = function () { var k = chave(this.value), c = catalogo()[k], p = M.produtos[k], d = Object.keys(M.dic).map(function (x) { return M.dic[x]; }).filter(function (x) { return chave(x.pt) === k; })[0]; var cat = (c && c.cat) || (p && p.cat) || (d && d.cat); if (cat) $('add-cat').value = cat; };
+      $('add-nome').onchange = function () { var p = M.produtos[chave(this.value)]; if (p && p.loja) $('add-loja').value = p.loja; };
       $('add-ok').onclick = function () {
-        var nome = $('add-nome').value.trim().slice(0, 80), q = +$('add-qtd').value || 1;
+        var nome = $('add-nome').value.trim().slice(0, 80), q = +$('add-qtd').value || 1, loja = $('add-loja').value;
         if (!nome) { $('add-erro').textContent = 'Digite o nome do item.'; return; }
-        var k = chave(nome), m = {}, existe = catalogo()[k];
-        m['produtos/' + k + '/pt'] = existe ? existe.pt : nome; m['produtos/' + k + '/cat'] = $('add-cat').value; m['produtos/' + k + '/fixo'] = true; m['produtos/' + k + '/qtd'] = q;
-        gravar(m).then(function () { toast('Incluído: ' + nome); });
+        var k = chave(nome), m = {}, existe = catalogo()[k], p = M.produtos[k] || {};
+        m['produtos/' + k + '/pt'] = existe ? existe.pt : nome; m['produtos/' + k + '/cat'] = (existe && existe.cat) || p.cat || adivinharCat(nome);
+        m['produtos/' + k + '/fixo'] = true; m['produtos/' + k + '/qtd'] = q; m['produtos/' + k + '/loja'] = loja || null;
+        gravar(m).then(function () { toast('Incluído: ' + nome + (loja ? ' (' + LN[loja] + ')' : '')); });
       };
       $('add-nome').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('add-ok').click(); });
     }
@@ -422,10 +445,11 @@ window.iniciarMercado = function (F) {
     var c = catalogo()[k], i = listaDoMes().filter(function (x) { return x.k === k; })[0]; if (!c || !i) return;
     var auto = !(+((M.produtos[k] || {}).qtd) > 0);
     abrirFolha('<h3>' + esc(c.pt) + '</h3><p class="nota">' + (auto ? 'A quantidade vem da sua média por mês.' : 'Quantidade definida por você.') + '</p><label class="lb" for="f-qtd">Quantidade no mês</label><input class="in" id="f-qtd" type="number" min="0.1" step="0.1" inputmode="decimal" value="' + esc(i.qtd) + '">' +
+      '<label class="lb" for="f-loja">Onde comprar</label><select class="in" id="f-loja"><option value="">Mais barato</option>' + LOJAS.map(function (l) { return '<option value="' + l.id + '"' + (l.id === i.loja ? ' selected' : '') + '>' + esc(l.n) + '</option>'; }).join('') + '</select>' +
       '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (auto ? '' : '<button class="btn" id="f-auto">Usar a média</button>') + '<button class="btn" id="f-fechar">Cancelar</button></div>');
     $('f-fechar').onclick = fecharFolha;
-    var salva = function (v) { var m = {}; m['produtos/' + k + '/qtd'] = v; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(fecharFolha); };
-    $('f-ok').onclick = function () { var v = +$('f-qtd').value; if (v > 0) salva(Math.round(v * 10) / 10); else fecharFolha(); };
+    var salva = function (v) { var m = {}; m['produtos/' + k + '/qtd'] = v; m['produtos/' + k + '/loja'] = $('f-loja').value || null; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(fecharFolha); };
+    $('f-ok').onclick = function () { var v = +$('f-qtd').value; salva(v > 0 ? Math.round(v * 10) / 10 : null); };
     if ($('f-auto')) $('f-auto').onclick = function () { salva(null); };
   }
   // ── família: o dono libera outras contas pelo código delas ──
@@ -468,37 +492,4 @@ window.iniciarMercado = function (F) {
     setTimeout(function () { if ($('f-preco')) $('f-preco').focus(); }, 60);
     $('f-fechar').onclick = fecharFolha;
     var salva = function (v) { var m = {}; m['produtos/' + k + '/precos/' + loja] = v; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(function () { fecharFolha(); toast('Preço salvo'); }); };
-    $('f-ok').onclick = function () { var v = parseFloat($('f-preco').value); if (!(v > 0)) { fecharFolha(); return; } salva({ p: Math.round(v * 100) / 100, data: hojeISO(), fonte: $('f-fonte').value }); };
-    if ($('f-apagar')) $('f-apagar').onclick = function () { salva(null); };
-  }
-  // ── Open Food Facts (gratuito; até 10 buscas por minuto) ──
-  var OFF = 'https://world.openfoodfacts.org';
-  var CAMPOS = 'code,product_name,brands,quantity,nutriscore_grade,nova_group,categories_tags';
-  function pedirOFF(url) { return fetch(url, { headers: { Accept: 'application/json' } }).then(function (r) { if (r.status === 429) throw { code: 'limite' }; if (!r.ok) throw { code: 'http' }; return r.json(); }); }
-  function falhaOFF(k, e) { UI.off[k] = Object.assign(UI.off[k] || {}, { lista: null, msg: e && e.code === 'limite' ? 'O Open Food Facts limita a 10 buscas por minuto. Espere um pouco e tente de novo.' : 'O Open Food Facts não respondeu agora (ele é gratuito e às vezes fica lento). Tente de novo em instantes.' }); desenhar(); }
-  function buscarOFF(k, q) {
-    if (!q) return;
-    UI.off[k] = { q: q, msg: 'Buscando…' }; desenhar();
-    pedirOFF(OFF + '/cgi/search.pl?search_terms=' + encodeURIComponent(q) + '&search_simple=1&action=process&json=1&page_size=6&tagtype_0=countries&tag_contains_0=contains&tag_0=canada&fields=' + CAMPOS)
-      .then(function (d) { UI.off[k] = { q: q, lista: (d.products || []).slice(0, 6) }; desenhar(); }, function (e) { falhaOFF(k, e); });
-  }
-  function escolherOFF(k, j) {
-    var x = UI.off[k] && UI.off[k].lista && UI.off[k].lista[j]; if (!x) return;
-    var tags = x.categories_tags || [], m = {};
-    m['produtos/' + k + '/off'] = { code: String(x.code || ''), nome: String(x.product_name || '').slice(0, 80), marca: String(x.brands || '').slice(0, 60), ns: String(x.nutriscore_grade || '').slice(0, 1), nova: x.nova_group || null, cat: String(tags[tags.length - 1] || '').slice(0, 80) };
-    m['produtos/' + k + '/pt'] = (catalogo()[k] || {}).pt || k;
-    gravar(m).then(function () { UI.off[k] = null; desenhar(); });
-  }
-  function alternativas(k) {
-    var o = (M.produtos[k] || {}).off; if (!o || !o.cat) return;
-    var atual = 'abcde'.indexOf(o.ns || 'e'); if (atual < 0) atual = 4;
-    var notas = 'abcde'.slice(0, Math.max(1, atual)).split('').join('|') || 'a';
-    UI.off[k] = { msg: 'Procurando opções melhores…' }; desenhar();
-    pedirOFF(OFF + '/api/v2/search?categories_tags=' + encodeURIComponent(o.cat) + '&countries_tags_en=canada&nutrition_grades_tags=' + encodeURIComponent(notas) + '&sort_by=popularity_key&page_size=8&fields=' + CAMPOS)
-      .then(function (d) {
-        var alts = (d.products || []).filter(function (x) { return x.product_name && String(x.code) !== o.code; }).slice(0, 4).map(function (x) { return { code: String(x.code || ''), nome: String(x.product_name).slice(0, 80), marca: String(x.brands || '').slice(0, 60), qtd: String(x.quantity || '').slice(0, 30), ns: String(x.nutriscore_grade || '').slice(0, 1), nova: x.nova_group || null }; });
-        if (!alts.length) { UI.off[k] = { msg: atual === 0 ? 'Este já é Nutri-Score A. Boa escolha!' : 'Não achei opções melhores nesta categoria vendidas no Canadá.' }; desenhar(); return; }
-        var m = {}; m['produtos/' + k + '/alts'] = alts; gravar(m).then(function () { UI.off[k] = null; desenhar(); });
-      }, function (e) { falhaOFF(k, e); });
-  }
-};
+    $('f-ok').onclick = function () { var v = parseFloat($('f-preco').value); if (!(v > 0)) { fecharFolha(); return; } salva({ p: Math.round(v * 100) / 100, data: hojeISO(), fonte: $('f-
