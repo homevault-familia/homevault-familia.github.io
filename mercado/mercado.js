@@ -98,7 +98,7 @@ window.iniciarMercado = function (F) {
     nomes: ['Nomes aprendidos', '<p>Os recibos trazem nomes abreviados em inglês, como “RASPBERRIES” ou “PC BLK BEANS”. Quando você dá um nome a eles, o app guarda e usa o mesmo nome nas próximas compras.</p><p>Em <b>Ver e corrigir</b> você apaga um nome errado, e o app pergunta de novo da próxima vez.</p>'],
     conferir: ['Conferir o recibo', '<p>Antes de salvar, confira:</p><ul><li><b>Mercado</b> e <b>data</b>.</li><li><b>Total pago</b> igual ao do recibo.</li><li>Cada item com o <b>nome que você usa</b> (use sempre o mesmo nome em mercados diferentes, para comparar preços) e a <b>categoria</b>.</li></ul><p>Se aparecer <b>confere com o total ✓</b>, está tudo certo. Se aparecer uma diferença em vermelho, falta um item ou algum valor está errado.</p><p><b>×</b> tira um item, <b>+ Item</b> acrescenta. <b>← Voltar</b> sai sem salvar.</p>'],
     precos: ['Preços', '<p>Cada item da lista com o preço em cada mercado. Os preços vêm dos seus recibos e do que você anotar.</p><p>Toque no nome de um mercado (o quadrado com <b>+</b>) para anotar o preço que viu no folheto, no Flipp ou na prateleira. Compare sempre a mesma embalagem.</p><p><b>Em amarelo:</b> o mais barato. <b>Total da lista por mercado:</b> quanto sairia a lista inteira em cada loja.</p>'],
-    saude: ['Mais saudável', '<p>Para cada alimento da lista:</p><ol class="passos"><li><b>Buscar no Open Food Facts</b> mostra o Nutri-Score (A é o melhor) e o NOVA (1 natural, 4 ultraprocessado). Escolha o produto certo da lista.</li><li><b>Opções melhores</b> mostra produtos parecidos com nota melhor, vendidos no Canadá.</li><li><b>Digitar a nota:</b> se a busca não achar o produto, toque em <b>Abrir no site do Open Food Facts</b>, veja o Nutri-Score e o NOVA lá, e escolha as notas nos campos do produto.</li><li><b>Yuka (opcional):</b> a busca por nome no Yuka é paga, mas <b>escanear o código de barras é grátis</b>. Quando estiver com o produto na mão, escaneie no Yuka e anote a nota aqui.</li></ol>'],
+    saude: ['Mais saudável', '<p>Aqui aparecem só os alimentos <b>industrializados</b> da lista (caixa, lata, pacote, congelados, embutidos). Frutas, verduras, carne e peixe frescos e ovos ficam de fora, porque não têm nota.</p><p>Para cada um:</p><ol class="passos"><li><b>Buscar no Open Food Facts</b> mostra o Nutri-Score (A é o melhor) e o NOVA (1 natural, 4 ultraprocessado). Escolha o produto certo da lista.</li><li><b>Opções melhores</b> mostra produtos parecidos com nota melhor, vendidos no Canadá.</li><li><b>Digitar a nota:</b> se a busca não achar o produto, toque em <b>Abrir no site do Open Food Facts</b>, veja o Nutri-Score e o NOVA lá, e escolha as notas nos campos do produto.</li><li><b>Yuka (opcional):</b> a busca por nome no Yuka é paga, mas <b>escanear o código de barras é grátis</b>. Quando estiver com o produto na mão, escaneie no Yuka e anote a nota aqui.</li></ol>'],
     gastos: ['Gastos', '<p><b>Orçamento mensal:</b> quanto você quer gastar por mês com mercado. Ele aparece nos números do topo.</p><p><b>Por mês:</b> o total de cada mês; em vermelho, os que passaram do orçamento.<br><b>Por categoria</b> e <b>por mercado:</b> onde o dinheiro está indo.</p>'],
     familia: ['Compartilhar com a família', '<ol class="passos"><li>A pessoa abre <b>minhacasaapp.com/mercado</b> no iPhone dela e entra com a conta dela.</li><li>Aparece um <b>código</b>. Ela te manda esse código.</li><li>Aqui, digite o nome dela, cole o código e toque em <b>Liberar acesso</b>.</li></ol><p>A partir daí, vocês veem e mexem na mesma lista, recibos e preços. <b>Remover</b> tira o acesso.</p>'],
     atalho: ['Instalar o atalho', '<p>O atalho <b>Mercado</b> é o que tira a foto e usa a IA da Apple para ler o recibo.</p><ol class="passos"><li>Toque em <b>Instalar o atalho Mercado</b>.</li><li>Toque em <b>Get Shortcut</b> e depois <b>Add Shortcut</b>.</li><li>Não mude o nome: tem que ser <b>Mercado</b>.</li></ol><p>Dica: para ir mais rápido, ponha o atalho na tela inicial (no app Atalhos, segure o <b>Mercado</b> → <b>Share</b> → <b>Add to Home Screen</b>).</p>']
@@ -255,6 +255,18 @@ window.iniciarMercado = function (F) {
     return g;
   }
   function precoLista(i) { if (i.loja) { var p = i.precos.filter(function (x) { return x.loja === i.loja; })[0]; return p ? p.p : null; } return i.min ? i.min.p : null; }
+  // total da lista com o mercado escolhido de cada item (ou o mais barato)
+  function caixaTotal(L) {
+    var t = totalLista(L); if (!t.total) return '';
+    return '<div class="total-lista"><div><span>Total da lista</span><b>' + din(t.total) + '</b></div>' +
+      (t.carrinho ? '<div><span>No carrinho</span><b>' + din(t.carrinho) + '</b></div><div><span>Falta pegar</span><b>' + din(t.total - t.carrinho) + '</b></div>' : '') +
+      (t.semPreco ? '<p>' + t.semPreco + (t.semPreco > 1 ? ' itens sem preço ficam' : ' item sem preço fica') + ' fora da conta.</p>' : '') + '</div>';
+  }
+  function totalLista(L) {
+    var t = { total: 0, carrinho: 0, semPreco: 0 };
+    L.forEach(function (i) { var p = precoLista(i); if (!p) { t.semPreco++; return; } var v = p * i.qtd; t.total += v; if (i.marcado) t.carrinho += v; });
+    t.total = Math.round(t.total * 100) / 100; t.carrinho = Math.round(t.carrinho * 100) / 100; return t;
+  }
   function textoLista(L) {
     var linhas = ['🛒 Lista do mercado — ' + mesBR(mesDe(hojeISO()))];
     grupos(L).forEach(function (g) {
@@ -262,8 +274,8 @@ window.iniciarMercado = function (F) {
       linhas.push('', '*' + g.nome + '*' + (UI.agrupar === 'loja' && sub ? ' (~' + din(sub) + ')' : ''));
       g.itens.forEach(function (i) { var onde = i.loja || (i.min && i.min.loja), p = precoLista(i); linhas.push((i.marcado ? '☑ ' : '☐ ') + i.qtd + ' × ' + i.pt + (UI.agrupar !== 'loja' && onde ? ' — ' + LN[onde] + (p ? ' ' + din(p) : '') : '')); });
     });
-    var r = resumo(L);
-    if (r.melhor) linhas.push('', 'Estimativa: ' + din(r.melhor));
+    var tl = totalLista(L);
+    if (tl.total) linhas.push('', '*Total estimado: ' + din(tl.total) + '*' + (tl.semPreco ? ' (' + tl.semPreco + ' sem preço)' : ''));
     return linhas.join('\n');
   }
   function compartilharTexto(t, titulo) {
@@ -285,9 +297,9 @@ window.iniciarMercado = function (F) {
     var L = listaDoMes();
     if (!L.length) return kpis() + cartaoIncluir() + '<div class="card"><h2>A lista se monta sozinha' + ajuda('lista') + '</h2><p class="nota">Com o que você compra com frequência nos recibos, ou com os itens que você incluir acima.</p><button class="btn" data-ir="recibo">Adicionar recibo</button></div>';
     var r = resumo(L), meses = ultimosMeses(3).map(mesBR).join(', '), marcados = L.filter(function (i) { return i.marcado; }).length;
-    var h = kpis() + cartaoIncluir() + '<div class="card"><details' + (UI.abrirLista ? ' open' : '') + ' id="det-lista"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 style="margin:0">Lista do mês · ' + L.length + ' itens' + (marcados ? ' · ' + marcados + ' no carrinho' : '') + ajuda('lista') + '</h2><span class="nota" style="margin:0;white-space:nowrap">' + (UI.abrirLista ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' +
+    var h = kpis() + cartaoIncluir() + '<div class="card"><details' + (UI.abrirLista ? ' open' : '') + ' id="det-lista"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 style="margin:0">Lista do mês · ' + L.length + ' itens' + (totalLista(L).total ? ' · ' + din(totalLista(L).total) : '') + (marcados ? ' · ' + marcados + ' no carrinho' : '') + ajuda('lista') + '</h2><span class="nota" style="margin:0;white-space:nowrap">' + (UI.abrirLista ? 'fechar ▴' : 'ver ▾') + '</span></summary><div style="margin-top:10px">' +
       '<p class="nota">' + (meses ? (ultimosMeses(3).length < 3 ? 'Tudo o que você comprou nos recibos (' + esc(meses) + ') e o que você incluiu. Quando houver 3 meses de recibos, a lista mostra só o que se repete. ' : 'O que você comprou em pelo menos 2 dos últimos 3 meses (' + esc(meses) + ') e o que você incluiu. ') : '') + 'Comprando cada item onde é mais barato: <b>' + din(r.melhor) + '</b>' + (r.sempre > r.melhor ? ' em vez de ' + din(r.sempre) : '') + '. Toque no quadradinho para marcar o que já pegou.</p>' +
-      '<div class="filtros"><button data-agrupar="cat" class="' + (UI.agrupar === 'cat' ? 'on' : '') + '">Por categoria</button><button data-agrupar="loja" class="' + (UI.agrupar === 'loja' ? 'on' : '') + '">Por mercado</button></div>';
+      caixaTotal(L) + '<div class="filtros"><button data-agrupar="cat" class="' + (UI.agrupar === 'cat' ? 'on' : '') + '">Por categoria</button><button data-agrupar="loja" class="' + (UI.agrupar === 'loja' ? 'on' : '') + '">Por mercado</button></div>';
     grupos(L).forEach(function (g) {
       var sub = g.itens.reduce(function (s, i) { var p = precoLista(i); return s + (p ? p * i.qtd : 0); }, 0);
       h += '<div class="selo" style="margin:12px 0 2px">' + esc(g.nome) + (UI.agrupar === 'loja' && sub ? ' · ~' + din(sub) : '') + '</div>';
@@ -415,11 +427,22 @@ window.iniciarMercado = function (F) {
   }
   function nsBadge(g) { g = String(g || '').toLowerCase(); return /^[a-e]$/.test(g) ? '<span class="ns ns-' + g + '">' + g.toUpperCase() + '</span>' : ''; }
   function yukaCor(v) { return v < 25 ? 'y0' : v < 50 ? 'y1' : v < 75 ? 'y2' : 'y3'; }
+  // Saudável mostra só o que é industrializado (caixa, lata, pacote). Frescos ficam de fora:
+  // hortifrúti, ovos, e carne/peixe fresco (a não ser embutidos, empanados, defumados etc.)
+  var PROCESSADO = /SAUSAGE|SALSICHA|LINGUI|HAM\b|PRESUNTO|BACON|DELI|SALAMI|PEPPERONI|WIENER|HOT ?DOG|NUGGET|BREADED|EMPANAD|SMOKED|DEFUMAD|BURGER|HAMB|JERKY|CANNED|TUNA|ATUM|SARDIN|FROZEN|CONGELAD|MARINAD|SEASONED|TEMPERAD|STICK/i;
+  function ehFresco(i) {
+    var t = (i.pt || '') + ' ' + ((M.produtos[i.k] || {}).en || '');
+    if (i.cat === 'Hortifruti') return !/CANNED|ENLATAD|LATA|DRIED|DESIDRAT|JUICE|SUCO|SAUCE|MOLHO|CHIPS|FROZEN|CONGELAD/i.test(t);
+    if (i.cat === 'Carnes e peixes') return !PROCESSADO.test(t);
+    if (i.cat === 'Laticínios e ovos') return /\bEGG|OVO/i.test(t);
+    return false;
+  }
   function telaSaude() {
-    var L = listaDoMes().filter(function (i) { return COMIDA[i.cat]; });
-    var h = '<div class="card"><h2>Mais saudável' + ajuda('saude') + '</h2><p class="nota">Para cada alimento da lista, busque o produto no <b>Open Food Facts</b> (base aberta e gratuita) para ver o Nutri-Score e a classificação NOVA, e depois opções melhores vendidas no Canadá. O Yuka é opcional: escanear o código de barras nele é grátis; anote a nota aqui.</p>' +
+    var todos = listaDoMes().filter(function (i) { return COMIDA[i.cat]; }), L = todos.filter(function (i) { return !ehFresco(i); }), frescos = todos.length - L.length;
+    var h = '<div class="card"><h2>Mais saudável' + ajuda('saude') + '</h2><p class="nota">Para cada alimento industrializado da lista, busque o produto no <b>Open Food Facts</b> (base aberta e gratuita) para ver o Nutri-Score e a classificação NOVA, e depois opções melhores vendidas no Canadá. O Yuka é opcional: escanear o código de barras nele é grátis; anote a nota aqui.</p>' +
       '<p class="nota" style="margin:0">Nutri-Score: ' + ['a', 'b', 'c', 'd', 'e'].map(nsBadge).join(' ') + ' (A é o melhor). NOVA: 1 natural … 4 ultraprocessado. Yuka: <span class="ns y0">0–24</span> <span class="ns y1">25–49</span> <span class="ns y2">50–74</span> <span class="ns y3">75–100</span></p></div>';
-    if (!L.length) return h + '<div class="vazio">Os alimentos da sua lista aparecem aqui.</div>';
+    if (frescos) h += '<p class="nota" style="margin:-4px 2px 12px">' + frescos + (frescos > 1 ? ' itens frescos' : ' item fresco') + ' da lista (frutas, verduras, carne e peixe frescos, ovos) não aparecem aqui: eles não têm nota de industrializado.</p>';
+    if (!L.length) return h + '<div class="vazio">Os alimentos industrializados da sua lista (caixa, lata, pacote) aparecem aqui.</div>';
     L.forEach(function (i) {
       var p = M.produtos[i.k] || {}, o = p.off, alts = [].concat(p.alts || []).filter(Boolean), res = UI.off[i.k];
       h += '<div class="card"><div class="linha" style="padding:0"><div class="info"><div class="t" style="display:flex;align-items:center;gap:8px">' + esc(i.pt) + '</div><div class="s">' + (o ? esc(o.nome) + (o.marca ? ' · ' + esc(o.marca) : '') + ' ' + nsBadge(o.ns) + (o.nova ? ' <span class="selo">NOVA ' + esc(o.nova) + '</span>' : '') : 'Ainda não buscado') + '</div></div>' +

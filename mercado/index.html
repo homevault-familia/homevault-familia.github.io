@@ -129,6 +129,11 @@ textarea.in{font-size:16px}
 .toast{bottom:calc(env(safe-area-inset-bottom) + 16px);pointer-events:none}
 .folha{max-height:85vh;max-height:85dvh}
 .topo,main{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+.total-lista{display:flex;flex-wrap:wrap;gap:8px 18px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin:4px 0 12px}
+.total-lista div{display:flex;flex-direction:column}
+.total-lista span{font-size:13px;color:#1e3a8a;font-weight:700}
+.total-lista b{font-size:22px;color:#1d4ed8;font-variant-numeric:tabular-nums}
+.total-lista p{flex-basis:100%;margin:0;font-size:13px;color:#475569}
 </style>
 </head>
 <body>
@@ -202,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script src="../config.js"></script>
 <script src="leitor.js?v=8"></script>
-<script src="mercado.js?v=27"></script>
+<script src="mercado.js?v=29"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
