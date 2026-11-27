@@ -20,7 +20,11 @@ body.teste .topo{padding-top:calc(env(safe-area-inset-top) + 34px)}
 .topo h1 small{display:block;font-size:12px;font-weight:500;color:#94a3b8}
 .topo a.volta{color:#cbd5e1;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
 .sair{background:transparent;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:7px 12px;cursor:pointer;min-height:36px}
-.abas{display:flex;gap:2px;overflow-x:auto;max-width:900px;margin:10px auto 0;scrollbar-width:none}
+.abas-wrap{position:relative;max-width:900px;margin:10px auto 0}
+.abas{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.seta{position:absolute;top:0;bottom:3px;width:38px;border:0;color:#fff;font-size:28px;font-weight:700;line-height:1;display:none;align-items:center;cursor:pointer;z-index:2;padding:0}
+.seta.esq{left:0;justify-content:flex-start;padding-left:2px;background:linear-gradient(90deg,#0f172a 55%,rgba(15,23,42,0))}
+.seta.dir{right:0;justify-content:flex-end;padding-right:2px;background:linear-gradient(270deg,#0f172a 55%,rgba(15,23,42,0))}
 .abas::-webkit-scrollbar{display:none}
 .abas button{flex:none;background:transparent;border:0;color:#94a3b8;font-weight:700;padding:11px 12px;border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer;min-height:44px}
 .abas button.on{color:#fff;border-bottom-color:#60a5fa}
@@ -131,13 +135,18 @@ a{color:#1d4ed8}
       <a class="volta" href="../">MinhaCasa</a>
       <button class="sair" id="p-sair">Sair</button>
     </div>
+    <div class="abas-wrap">
+    <button class="seta esq" id="seta-esq" aria-label="Ver abas à esquerda">‹</button>
     <nav class="abas" id="abas">
       <button data-aba="lista" class="on">Lista do mês</button>
       <button data-aba="recibo">Recibo</button>
       <button data-aba="precos">Preços</button>
       <button data-aba="saude">Saudável</button>
       <button data-aba="gastos">Gastos</button>
+      <button data-aba="ajustes">⚙️ Configuração</button>
     </nav>
+    <button class="seta dir" id="seta-dir" aria-label="Ver mais abas à direita">›</button>
+    </div>
   </div>
   <main id="conteudo"><div class="carregando">Carregando…</div></main>
 </div>
@@ -147,7 +156,7 @@ a{color:#1d4ed8}
 
 <script src="../config.js"></script>
 <script src="leitor.js?v=5"></script>
-<script src="mercado.js?v=10"></script>
+<script src="mercado.js?v=12"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';

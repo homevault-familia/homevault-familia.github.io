@@ -12,7 +12,11 @@ window.iniciarMercado = function (F) {
   var $ = function (id) { return document.getElementById(id); };
   var qsa = function (s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-  var din = function (v) { return (v == null || isNaN(v)) ? '—' : '$' + Number(v).toFixed(2); };
+  // Dinheiro sempre em dólar canadense, com 2 casas: CA$1,234.56
+  var FMT_CAD = (function () { try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return null; } })();
+  var din = function (v) { if (v == null || v === '' || isNaN(v)) return '—'; v = Number(v); return FMT_CAD ? FMT_CAD.format(v) : (v < 0 ? '-' : '') + 'CA$' + Math.abs(v).toFixed(2); };
+  // valor em campo de digitar: 2 casas (25.6 → 25.60)
+  var dec2 = function (v) { return (v == null || v === '' || isNaN(v)) ? '' : Number(v).toFixed(2); };
   var chave = Leitor.chave;
   var hojeISO = function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   var mesDe = function (d) { return String(d || '').slice(0, 7); };
@@ -66,7 +70,7 @@ window.iniciarMercado = function (F) {
     var qs = new URLSearchParams(location.search), vindo = qs.get('texto');
     // Atalho abre direto numa aba: minhacasaapp.com/mercado/#recibo ou ?aba=recibo
     var abaPedida = (qs.get('aba') || location.hash.replace('#', '')).toLowerCase();
-    if (['lista', 'recibo', 'precos', 'saude', 'gastos'].indexOf(abaPedida) >= 0) {
+    if (['lista', 'recibo', 'precos', 'saude', 'gastos', 'ajustes'].indexOf(abaPedida) >= 0) {
       UI.aba = abaPedida;
       qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x.dataset.aba === abaPedida); });
     }
@@ -137,6 +141,14 @@ window.iniciarMercado = function (F) {
   });
 
   // ── abas ──
+  // setas ‹ › nas abas: aparecem quando há mais abas para os lados
+  (function () {
+    var nav = $('abas'), e = $('seta-esq'), d = $('seta-dir'); if (!nav || !e || !d) return;
+    var ver = function () { var max = nav.scrollWidth - nav.clientWidth; e.style.display = nav.scrollLeft > 4 ? 'flex' : 'none'; d.style.display = nav.scrollLeft < max - 4 ? 'flex' : 'none'; };
+    e.onclick = function () { nav.scrollBy({ left: -160, behavior: 'smooth' }); };
+    d.onclick = function () { nav.scrollBy({ left: 160, behavior: 'smooth' }); };
+    nav.addEventListener('scroll', ver, { passive: true }); window.addEventListener('resize', ver); if (window.ResizeObserver) new ResizeObserver(ver).observe(nav); setTimeout(ver, 50); ver();
+  })();
   qsa('#abas button').forEach(function (b) { b.onclick = function () { UI.aba = b.dataset.aba; qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x === b); }); desenhar(); window.scrollTo(0, 0); }; });
 
   // ── dados derivados ──
@@ -189,7 +201,7 @@ window.iniciarMercado = function (F) {
 
   // ── telas ──
   function desenhar() {
-    var f = { lista: telaLista, recibo: telaRecibo, precos: telaPrecos, saude: telaSaude, gastos: telaGastos }[UI.aba];
+    var f = { lista: telaLista, recibo: telaRecibo, precos: telaPrecos, saude: telaSaude, gastos: telaGastos, ajustes: telaAjustes }[UI.aba];
     $('conteudo').innerHTML = f();
     ligar();
   }
@@ -268,6 +280,12 @@ window.iniciarMercado = function (F) {
     'ITEM|name as printed|quantity|unit price|line total|specific product name in Brazilian Portuguese, e.g. Framboesa, Kiwi dourado, Macarrão (never a generic word like Frutas)|category\n' +
     'Category must be one of: Hortifruti, Carnes e peixes, Laticínios e ovos, Padaria, Mercearia, Congelados, Bebidas, Lanches e doces, Limpeza, Higiene, Bebê e pet, Outros.\n' +
     'Numbers with a dot, no $ sign. Weighed items: quantity is the weight. Apply discounts to the item. Never list subtotal, total, tax, payment, card or change as items. The line totals plus tax must equal TOTAL; if not, re-check the prices.';
+  function telaAjustes() {
+    return '<div class="card"><h2>Instalar o atalho no iPhone</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
+      '<ol class="passos"><li>Toque no botão abaixo.</li><li>Toque em <b>Get Shortcut</b> (Obter atalho) e depois em <b>Add Shortcut</b> (Adicionar atalho).</li><li>Deixe o nome <b>Mercado</b>, sem mudar.</li></ol>' +
+      '<a class="btn cheio" href="' + ATALHO_URL + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Instalar o atalho Mercado</a>' +
+      '<p class="nota" style="margin-top:8px">O atalho usa a IA da Apple (iPhone 15 Pro ou mais novo). Sem ela, use <b>Não tem a IA da Apple?</b> na aba <b>Recibo</b>. Se o iPhone pedir para baixar o app <b>Atalhos</b> (Shortcuts), baixe na App Store: é gratuito, da Apple.</p></div>';
+  }
   function telaRecibo() {
     if (UI.rev) return telaRevisar();
     var h = '<div class="card"><h2>Novo recibo</h2>' +
@@ -284,10 +302,6 @@ window.iniciarMercado = function (F) {
       '<ol class="passos"><li>Toque em <b>Copiar pedido para a IA</b>.</li><li>Abra um app de IA que leia foto (ChatGPT, Gemini, Copilot ou Claude), <b>cole o pedido</b> e mande a <b>foto do recibo</b>.</li><li>Copie a resposta, volte aqui e toque em <b>2. Colar o recibo</b>.</li></ol>' +
       '<button class="btn cheio" id="copiar-pedido">Copiar pedido para a IA</button></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
-    h += '<div class="card"><h2>Instalar o atalho no iPhone</h2><p class="nota">Para usar o botão <b>1. Foto do recibo</b> em outro iPhone (por exemplo, da família):</p>' +
-      '<ol class="passos"><li>Toque no botão abaixo.</li><li>Toque em <b>Get Shortcut</b> (Obter atalho) e depois em <b>Add Shortcut</b> (Adicionar atalho).</li><li>Deixe o nome <b>Mercado</b>, sem mudar.</li></ol>' +
-      '<a class="btn cheio" href="' + ATALHO_URL + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Instalar o atalho Mercado</a>' +
-      '<p class="nota" style="margin-top:8px">O atalho usa a IA da Apple (iPhone 15 Pro ou mais novo). Sem ela, use <b>Não tem a IA da Apple?</b> acima. Se o iPhone pedir para baixar o app <b>Atalhos</b> (Shortcuts), baixe na App Store: é gratuito, da Apple.</p></div>';
     h += '<div class="card"><h2>Recibos salvos</h2>' + (rs.length ? rs.slice(0, 40).map(function (r) {
       return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + ' · ' + esc(r.data) + '</div><div class="s">' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Ver</button></div>';
     }).join('') : '<div class="vazio">Nenhum recibo ainda.</div>') + '</div>';
@@ -308,8 +322,8 @@ window.iniciarMercado = function (F) {
       (r.emparelhou ? '<p class="nota">O texto veio com os nomes e os preços em colunas separadas. Juntei na ordem; confira se cada preço ficou no item certo.</p>' : '') +
       '<div class="grade3" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><div><label class="lb" for="rv-loja">Mercado</label><select class="in" id="rv-loja">' + LOJAS.map(function (l) { return '<option value="' + l.id + '"' + (l.id === r.loja ? ' selected' : '') + '>' + esc(l.n) + '</option>'; }).join('') + '</select></div>' +
       '<div><label class="lb" for="rv-data">Data</label><input class="in" type="date" id="rv-data" value="' + esc(r.data) + '"></div>' +
-      '<div><label class="lb" for="rv-total">Total pago</label><input class="in" type="number" step="0.01" inputmode="decimal" id="rv-total" value="' + esc(r.total == null ? '' : r.total) + '"></div>' +
-      '<div><label class="lb" for="rv-imp">Imposto (HST)</label><input class="in" type="number" step="0.01" inputmode="decimal" id="rv-imp" value="' + esc(r.imposto || '') + '"></div></div>' +
+      '<div><label class="lb" for="rv-total">Total pago</label><input class="in" type="number" step="0.01" inputmode="decimal" id="rv-total" value="' + esc(dec2(r.total)) + '"></div>' +
+      '<div><label class="lb" for="rv-imp">Imposto (HST)</label><input class="in" type="number" step="0.01" inputmode="decimal" id="rv-imp" value="' + esc(r.imposto ? dec2(r.imposto) : '') + '"></div></div>' +
       '<p class="nota" style="margin-top:10px">Itens: <b>' + din(soma) + '</b>' + (r.total ? ' + imposto ' + din(r.imposto || 0) + ' = ' + din(soma + (+r.imposto || 0)) + (dif > 0.05 ? ' · <b style="color:#b91c1c">diferença de ' + din(dif) + ' para o total pago — confira</b>' : ' · confere com o total ✓') : '') + '</p></div>';
     h += '<div class="card"><h2>' + r.itens.length + ' itens</h2><p class="nota">Dê a cada item o nome que você usa (ex.: “Leite 2% 4 L”). Use sempre o mesmo nome em mercados diferentes para comparar os preços. O app lembra na próxima vez.</p>' +
       r.itens.map(function (it, i) {
@@ -317,7 +331,7 @@ window.iniciarMercado = function (F) {
           '<input class="in" list="nomes" data-i="' + i + '" data-f="pt" value="' + esc(it.pt) + '" aria-label="Nome do item">' +
           '<div class="grade3"><select class="in" data-i="' + i + '" data-f="cat" aria-label="Categoria">' + CATS.map(function (c) { return '<option' + (c === it.cat ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>' +
           '<label class="mini">Qtd<input class="in" type="number" step="0.001" inputmode="decimal" data-i="' + i + '" data-f="qtd" value="' + esc(it.qtd) + '"></label>' +
-          '<label class="mini">Total $<input class="in" type="number" step="0.01" inputmode="decimal" data-i="' + i + '" data-f="total" value="' + esc(it.total) + '"></label>' +
+          '<label class="mini">Total $<input class="in" type="number" step="0.01" inputmode="decimal" data-i="' + i + '" data-f="total" value="' + esc(dec2(it.total)) + '"></label>' +
           '<button class="btn sm" data-rm="' + i + '" aria-label="Remover item">×</button></div></div>';
       }).join('') +
       '<div class="grupo-btn" style="margin-top:12px"><button class="btn" id="rv-mais">+ Item</button></div></div>' +
@@ -383,7 +397,7 @@ window.iniciarMercado = function (F) {
     rs.filter(function (r) { return u3.indexOf(mesDe(r.data)) >= 0; }).forEach(function (r) { var n = LN[r.loja] || 'Outro'; pl[n] = (pl[n] || 0) + (+r.total || 0); });
     var lojas = Object.keys(pl).map(function (n) { return { l: n, v: pl[n] }; }).sort(function (a, b) { return b.v - a.v; });
     var mx = function (a) { return Math.max.apply(null, [1].concat(a.map(function (r) { return r.v; }))); };
-    return kpis() + '<div class="card"><h2>Orçamento mensal do mercado</h2><div class="grade3" style="grid-template-columns:minmax(0,10em) auto;justify-content:start"><input class="in" type="number" min="0" step="10" inputmode="decimal" id="orc" value="' + esc(orc || '') + '" placeholder="CAD" aria-label="Orçamento mensal em dólares"><button class="btn" id="orc-salvar">Salvar</button></div></div>' +
+    return kpis() + '<div class="card"><h2>Orçamento mensal do mercado</h2><div class="grade3" style="grid-template-columns:minmax(0,10em) auto;justify-content:start"><input class="in" type="number" min="0" step="10" inputmode="decimal" id="orc" value="' + esc(orc ? dec2(orc) : '') + '" placeholder="CA$" aria-label="Orçamento mensal em dólares"><button class="btn" id="orc-salvar">Salvar</button></div></div>' +
       '<div class="card"><h2>Por mês</h2>' + barras(meses, Math.max(orc, mx(meses)), orc) + (orc ? '<p class="nota" style="margin-top:8px">Em vermelho, os meses acima de ' + din(orc) + '.</p>' : '') + '</div>' +
       '<div class="card"><h2>Este mês por categoria</h2>' + barras(cats, mx(cats)) + '</div>' +
       '<div class="card"><h2>Por mercado · últimos 3 meses</h2>' + barras(lojas, mx(lojas)) + '</div>' + cartaoFamilia();
@@ -533,7 +547,7 @@ window.iniciarMercado = function (F) {
     var p = M.produtos[k] || {}, atual = p.precos && p.precos[loja], l = LOJAS.filter(function (x) { return x.id === loja; })[0];
     var termo = encodeURIComponent((p.en || c.pt).slice(0, 60));
     abrirFolha('<h3>' + esc(c.pt) + '</h3><p class="nota">' + esc(l.l) + '</p>' +
-      '<label class="lb" for="f-preco">Preço (CAD), mesma embalagem</label><input class="in" id="f-preco" type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(atual ? atual.p : '') + '">' +
+      '<label class="lb" for="f-preco">Preço (CAD), mesma embalagem</label><input class="in" id="f-preco" type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(atual ? dec2(atual.p) : '') + '">' +
       '<label class="lb" for="f-fonte">De onde</label><select class="in" id="f-fonte">' + ['folheto', 'Flipp', 'site', 'prateleira'].map(function (f) { return '<option' + (atual && atual.fonte === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select>' +
       (l.busca ? '<p class="nota" style="margin-top:10px"><a href="' + l.busca + termo + '" target="_blank" rel="noopener">Procurar no site da ' + esc(l.n) + '</a></p>' : '') +
       '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (atual ? '<button class="btn" id="f-apagar">Apagar</button>' : '') + '<button class="btn" id="f-fechar">Cancelar</button></div>');
