@@ -502,7 +502,7 @@ window.iniciarMercado = function (F) {
     $('rv-imp').onchange = function () { r.imposto = +this.value || 0; desenhar(); };
     qsa('[data-rm]').forEach(function (b) { b.onclick = function () { r.itens.splice(+b.dataset.rm, 1); desenhar(); }; });
     $('rv-mais').onclick = function () { r.itens.push({ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }); desenhar(); };
-    $('rv-cancelar').onclick = function () { UI.rev = null; desenhar(); };
+    $('rv-cancelar').onclick = function () { UI.rev = null; UI.texto = ''; desenhar(); };
     if ($('rv-apagar')) $('rv-apagar').onclick = function () {
       var b = $('rv-apagar'); if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Confirmar apagar'; return; }
       var m = {}; m['recibos/' + r.id] = null; gravar(m).then(function () { UI.rev = null; toast('Recibo apagado'); desenhar(); });

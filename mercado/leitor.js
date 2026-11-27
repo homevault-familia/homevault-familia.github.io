@@ -87,7 +87,12 @@ var Leitor = (function () {
     linhas.forEach(function (l) {
       var f = l.split('|').map(function (x) { return x.trim(); }), k = f[0].toUpperCase();
       if (k === 'LOJA' || k === 'STORE') { var U = (f[1] || '').toUpperCase(); for (var i = 0; i < LOJAS.length; i++) if (LOJAS[i][1].test(U)) { r.loja = LOJAS[i][0]; break; } }
-      else if (k === 'DATA' || k === 'DATE') r.data = data(f[1] || '', hoje);
+      else if (k === 'DATA' || k === 'DATE') {
+        r.data = data(f[1] || '', hoje);
+        // IA às vezes erra o ano ("202-10-27"): usa mês e dia com o ano mais recente que não fique no futuro
+        var md = !r.data && String(f[1] || '').match(/(\d{1,2})[-\/.](\d{1,2})\s*$/);
+        if (md) { var h0 = hoje || new Date(), y = h0.getFullYear(); r.data = data(y + '-' + md[1] + '-' + md[2], hoje) || data((y - 1) + '-' + md[1] + '-' + md[2], hoje); }
+      }
       else if (k === 'TOTAL') r.total = valorIA(f[1]);
       else if (k === 'IMPOSTO' || k === 'TAX') r.imposto = valorIA(f[1]) || 0;
       else if (k === 'ITEM' && f.length >= 3) {
