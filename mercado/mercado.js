@@ -246,10 +246,13 @@ window.iniciarMercado = function (F) {
   }
   function telaRecibo() {
     if (UI.rev) return telaRevisar();
-    var h = '<div class="card"><h2>Novo recibo</h2><ol class="passos"><li>Tire a foto do recibo, bem reta e com luz.</li><li>No app <b>Fotos</b>, abra a foto e toque no ícone de <b>Texto ao Vivo</b> (o quadradinho com linhas, no canto de baixo).</li><li>Toque e segure no texto → <b>Selecionar Tudo</b> → <b>Copiar</b>.</li><li>Volte aqui e toque em <b>Colar recibo</b>.</li></ol>' +
-      '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="colar">Colar recibo</button></div>' +
-      '<label class="lb" for="texto">Ou cole/digite o texto aqui</label><textarea class="in" id="texto" placeholder="ATLANTIC SUPERSTORE&#10;PC BLK BEANS   MRJ  1.29&#10;…">' + esc(UI.texto) + '</textarea>' +
-      '<div class="grupo-btn" style="margin-top:10px"><button class="btn" id="ler">Ler texto</button><button class="btn" id="manual">Recibo em branco</button></div><div class="erro" id="r-erro"></div></div>';
+    var h = '<div class="card"><h2>Novo recibo</h2>' +
+      '<button class="btn pri cheio" id="escanear" style="min-height:56px;font-size:17px">📷 Escanear recibo com a câmera</button>' +
+      '<div id="dica-scan" class="nota" style="display:none;background:#eff6ff;border-radius:12px;padding:12px;margin:10px 0 0">' +
+      '<b>Agora, na caixa branca abaixo:</b><ol class="passos" style="margin-top:6px"><li><b>Toque e segure</b> dentro da caixa até aparecer o menu.</li><li>Toque em <b>Scan Text</b> (ícone de texto com moldura, às vezes atrás da setinha <b>›</b>).</li><li>Aponte a câmera para o recibo inteiro, espere o texto aparecer e toque em <b>Insert</b>.</li></ol>O app lê o recibo sozinho em seguida.</div>' +
+      '<label class="lb" for="texto">Texto do recibo</label><textarea class="in" id="texto" placeholder="Toque e segure aqui → Scan Text">' + esc(UI.texto) + '</textarea>' +
+      '<div class="grupo-btn" style="margin-top:10px"><button class="btn" id="ler">Ler texto</button><button class="btn" id="colar">Colar</button><button class="btn" id="manual">Recibo em branco</button></div><div class="erro" id="r-erro"></div>' +
+      '<details style="margin-top:10px"><summary class="nota" style="cursor:pointer">Já tirou a foto antes?</summary><ol class="passos"><li>No app <b>Fotos</b>, abra a foto, toque e segure no texto → <b>Select All</b> → <b>Copy</b>.</li><li>Volte aqui e toque em <b>Colar</b>.</li></ol></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
     h += '<div class="card"><h2>Recibos salvos</h2>' + (rs.length ? rs.slice(0, 40).map(function (r) {
       return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + ' · ' + esc(r.data) + '</div><div class="s">' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Ver</button></div>';
@@ -378,7 +381,14 @@ window.iniciarMercado = function (F) {
     if ($('mb-add')) $('mb-add').onclick = adicionarMembro;
     qsa('[data-mbrm]').forEach(function (b) { b.onclick = function () { if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'Confirmar'; return; } removerMembro(b.dataset.mbrm); }; });
     // recibo
-    if ($('texto')) $('texto').oninput = function () { UI.texto = this.value; };
+    if ($('texto')) $('texto').oninput = function () {
+      UI.texto = this.value;
+      // texto do Scan Text (ou colado) chegou: lê sozinho quando parar de mudar
+      clearTimeout(UI.auto);
+      if (this.value.length - (UI.inicio || 0) > 40 && /\d[.,]\d{2}/.test(this.value)) UI.auto = setTimeout(lerTexto, 900);
+    };
+    if ($('texto')) $('texto').onfocus = function () { UI.inicio = this.value.length; };
+    if ($('escanear')) $('escanear').onclick = function () { $('dica-scan').style.display = ''; $('texto').focus(); $('texto').scrollIntoView({ block: 'center', behavior: 'smooth' }); };
     if ($('colar')) $('colar').onclick = function () {
       if (!navigator.clipboard || !navigator.clipboard.readText) { $('texto').focus(); $('r-erro').textContent = 'Toque e segure na caixa abaixo e escolha Colar.'; return; }
       navigator.clipboard.readText().then(function (t) { if (!t.trim()) { $('r-erro').textContent = 'A área de transferência está vazia. Copie o texto do recibo no app Fotos.'; return; } UI.texto = t; lerTexto(); },
@@ -486,10 +496,4 @@ window.iniciarMercado = function (F) {
     var termo = encodeURIComponent((p.en || c.pt).slice(0, 60));
     abrirFolha('<h3>' + esc(c.pt) + '</h3><p class="nota">' + esc(l.l) + '</p>' +
       '<label class="lb" for="f-preco">Preço (CAD), mesma embalagem</label><input class="in" id="f-preco" type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(atual ? atual.p : '') + '">' +
-      '<label class="lb" for="f-fonte">De onde</label><select class="in" id="f-fonte">' + ['folheto', 'Flipp', 'site', 'prateleira'].map(function (f) { return '<option' + (atual && atual.fonte === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select>' +
-      (l.busca ? '<p class="nota" style="margin-top:10px"><a href="' + l.busca + termo + '" target="_blank" rel="noopener">Procurar no site da ' + esc(l.n) + '</a></p>' : '') +
-      '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (atual ? '<button class="btn" id="f-apagar">Apagar</button>' : '') + '<button class="btn" id="f-fechar">Cancelar</button></div>');
-    setTimeout(function () { if ($('f-preco')) $('f-preco').focus(); }, 60);
-    $('f-fechar').onclick = fecharFolha;
-    var salva = function (v) { var m = {}; m['produtos/' + k + '/precos/' + loja] = v; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(function () { fecharFolha(); toast('Preço salvo'); }); };
-    $('f-ok').onclick = function () { var v = parseFloat($('f-preco').value); if (!(v > 0)) { fecharFolha(); return; } salva({ p: Math.round(v * 100) / 100, data: hojeISO(), fonte: $('f-
+      '<label class="lb" for="f-fonte">De onde</label><select class="in" id="f-fonte">' + ['folheto', 'Flipp', 'site', 'prateleira'].map(function (f) { 
