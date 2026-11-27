@@ -12,13 +12,11 @@ var Leitor = (function () {
   ];
   var PULAR = /(SUB\s*-?\s*TOTAL|\bTOTAL\b|\bHST\b|\bGST\b|\bPST\b|\bTAX|\bTVH|CHANGE|\bCASH\b|VISA|MASTER\s*CARD|\bDEBIT|INTERAC|AMEX|CREDIT|BALANCE|POINTS|OPTIMUM|SCENE\+?|AUTH|APPROV|ACCOUNT|\bCARD\b|TERMINAL|\bREF\b|INVOICE|TRANS(ACTION)?\b|CASHIER|\bTEL\b|PHONE|THANK|MERCI|ITEMS?\s*SOLD|NUMBER OF ITEMS|TENDER|AMOUNT|YOU SAVED|TOTAL SAVINGS|SAVINGS|REWARDS|MEMBER|RECEIPT|SURVEY|WWW\.|\.COM|\.CA\b|STORE\s*#|ST#|OP#|TE#|TR#|CUSTOMER COPY|SIGNATURE|AID:|TVR|RETAIN|HAVE A|GREAT DAY|NICE DAY|COME AGAIN|SEE YOU|PAYER|DROP-?IN|CUSTOMER|PRODUCT SALE|SOLD BY|SERVED BY|CLERK|REGISTER|LANE\b)/;
   var DESCONTO = /(SAVE|DISCOUNT|COUPON|REDUCTION|RABAIS|INSTANT|PROMO|MULTI\s*BUY|\bOFF\b|PRICE\s*MATCH|ROLLBACK\s*SAV|CPN|TPD|\bREDUC)/;
-  var EXPANDE = { BLK: 'BLACK', WHT: 'WHITE', CHKN: 'CHICKEN', CKN: 'CHICKEN', BRST: 'BREAST', BNLS: 'BONELESS', SKNLS: 'SKINLESS', BRD: 'BREAD', ORG: 'ORGANIC', GRN: 'GREEN', RD: 'RED', YLW: 'YELLOW', VEG: 'VEGETABLE', VEGS: 'VEGETABLES', FRZ: 'FROZEN', FZN: 'FROZEN', BF: 'BEEF', GRND: 'GROUND', LN: 'LEAN', XLN: 'EXTRA LEAN', CHS: 'CHEESE', CHSE: 'CHEESE', CHED: 'CHEDDAR', MOZZ: 'MOZZARELLA', YOG: 'YOGURT', YGRT: 'YOGURT', BTR: 'BUTTER', MLK: 'MILK', CRM: 'CREAM', SR: 'SOUR', PNT: 'PEANUT', BTTR: 'BUTTER', JCE: 'JUICE', ORNG: 'ORANGE', APPL: 'APPLE', BAN: 'BANANA', BANAN: 'BANANAS', POT: 'POTATO', POTS: 'POTATOES', TOM: 'TOMATO', TOMS: 'TOMATOES', ONIO: 'ONION', LETT: 'LETTUCE', CUC: 'CUCUMBER', STRAWB: 'STRAWBERRIES', BLUEB: 'BLUEBERRIES', WW: 'WHOLE WHEAT', WHL: 'WHOLE', WHT_: 'WHEAT', MUSH: 'MUSHROOMS', PEPP: 'PEPPERS', SAUS: 'SAUSAGE', PK: 'PORK', TKY: 'TURKEY', SLMN: 'SALMON', CRL: 'CEREAL', OATML: 'OATMEAL', PSTA: 'PASTA', SPAG: 'SPAGHETTI', SCE: 'SAUCE', TP: 'TOILET PAPER', PT: 'PAPER TOWEL', DET: 'DETERGENT', LIQ: 'LIQUID', DISH: 'DISH', SHMP: 'SHAMPOO', TOOTHP: 'TOOTHPASTE', BTL: 'BOTTLE', PKG: 'PACK', LRG: 'LARGE', LG: 'LARGE', MED: 'MEDIUM', SM: 'SMALL', XL: 'EXTRA LARGE', GV: 'GREAT VALUE', NN: 'NO NAME', CMPL: 'COMPLIMENTS', KS: 'KIRKLAND', FLK: 'FLAKES', CKG: 'COOKING', CLSSC: 'CLASSIC', PNTTN: 'PANETTONE', FILT: 'FILLET', FLT: 'FILLET', GRND: 'GROUND', SQ: 'SEAQUEST', BDC: 'BAUDUCCO', RDY: 'READY', GRNLA: 'GRANOLA', CNMN: 'CINNAMON', PPR: 'PEPPER', FLKS: 'FLAKES', ORIG: 'ORIGINAL', ENG: 'ENGLISH', BNS: 'BEANS', GRK: 'GREEK', CRNCH: 'CRUNCH', HNY: 'HONEY', SWT: 'SWEET', PEAN: 'PEANUT', ALMD: 'ALMOND', CHOC: 'CHOCOLATE', STRWB: 'STRAWBERRY', RSP: 'RASPBERRY', CRN: 'CORN', OLV: 'OLIVE', VEGG: 'VEGGIE', TORT: 'TORTILLA', SNDWCH: 'SANDWICH' };
+  var EXPANDE = { BLK: 'BLACK', WHT: 'WHITE', CHKN: 'CHICKEN', CKN: 'CHICKEN', BRST: 'BREAST', BNLS: 'BONELESS', SKNLS: 'SKINLESS', BRD: 'BREAD', ORG: 'ORGANIC', GRN: 'GREEN', RD: 'RED', YLW: 'YELLOW', VEG: 'VEGETABLE', VEGS: 'VEGETABLES', FRZ: 'FROZEN', FZN: 'FROZEN', BF: 'BEEF', GRND: 'GROUND', LN: 'LEAN', XLN: 'EXTRA LEAN', CHS: 'CHEESE', CHSE: 'CHEESE', CHED: 'CHEDDAR', MOZZ: 'MOZZARELLA', YOG: 'YOGURT', YGRT: 'YOGURT', BTR: 'BUTTER', MLK: 'MILK', CRM: 'CREAM', SR: 'SOUR', PNT: 'PEANUT', BTTR: 'BUTTER', JCE: 'JUICE', ORNG: 'ORANGE', APPL: 'APPLE', BAN: 'BANANA', BANAN: 'BANANAS', POT: 'POTATO', POTS: 'POTATOES', TOM: 'TOMATO', TOMS: 'TOMATOES', ONIO: 'ONION', LETT: 'LETTUCE', CUC: 'CUCUMBER', STRAWB: 'STRAWBERRIES', BLUEB: 'BLUEBERRIES', WW: 'WHOLE WHEAT', WHL: 'WHOLE', WHT_: 'WHEAT', MUSH: 'MUSHROOMS', PEPP: 'PEPPERS', SAUS: 'SAUSAGE', PK: 'PORK', TKY: 'TURKEY', SLMN: 'SALMON', CRL: 'CEREAL', OATML: 'OATMEAL', PSTA: 'PASTA', SPAG: 'SPAGHETTI', SCE: 'SAUCE', TP: 'TOILET PAPER', PT: 'PAPER TOWEL', DET: 'DETERGENT', LIQ: 'LIQUID', DISH: 'DISH', SHMP: 'SHAMPOO', TOOTHP: 'TOOTHPASTE', BTL: 'BOTTLE', PKG: 'PACK', LRG: 'LARGE', LG: 'LARGE', MED: 'MEDIUM', SM: 'SMALL', XL: 'EXTRA LARGE', GV: 'GREAT VALUE', NN: 'NO NAME', CMPL: 'COMPLIMENTS', KS: 'KIRKLAND', FLK: 'FLAKES', FLKS: 'FLAKES', ORIG: 'ORIGINAL', ENG: 'ENGLISH', BNS: 'BEANS', GRK: 'GREEK', CRNCH: 'CRUNCH', HNY: 'HONEY', SWT: 'SWEET', PEAN: 'PEANUT', ALMD: 'ALMOND', CHOC: 'CHOCOLATE', STRWB: 'STRAWBERRY', RSP: 'RASPBERRY', CRN: 'CORN', OLV: 'OLIVE', VEGG: 'VEGGIE', TORT: 'TORTILLA', SNDWCH: 'SANDWICH' };
   var CATS = [
-    ['Mercearia', /CRUSHED|DICED|CANNED|TOMATO PASTE|PASTA SAUCE|SOUP|FLAKES|CHEERIOS|CEREAL|OATS|CLOVES|CINNAMON|CUMIN|OREGANO|PAPRIKA|NUTMEG|SPICE|COOKING WINE|VINEGAR/],
-    ['Lanches e doces', /GRANOLA BAR|PANETTONE/],
-    ['Carnes e peixes', /POLLOCK|TILAPIA|SOLE\b|HALIBUT|FILLET/],
+    ['Mercearia', /CRUSHED|DICED|CANNED|TOMATO PASTE|PASTA SAUCE|SOUP|FLAKES|CHEERIOS|CEREAL|OATS|GRANOLA\b/],
     ['Bebidas', /JUICE/],
-    ['Hortifruti', /BANANA|APPLE|ORANGE|LEMON|LIME|GRAPE|BERR|STRAWB|BLUEB|PEAR|PEACH|MANGO|AVOCADO|POTATO|TOMATO|ONION|GARLIC|LETTUCE|SPINACH|KALE|CARROT|CELERY|BROCCOLI|CAULI|CUCUMBER|PEPPER|MUSHROOM|ZUCCHINI|SQUASH|CORN|SALAD|CABBAGE|MELON|PINEAPPLE|KIWI|CILANTRO|PARSLEY|PRODUCE|ORGANIC VEG/],
+    ['Hortifruti', /BANANA|APPLE|ORANGE|LEMON|LIME|GRAPE|BERR|RASPBERR|STRAWB|BLUEB|PEAR|PEACH|MANGO|AVOCADO|POTATO|TOMATO|ONION|GARLIC|LETTUCE|SPINACH|KALE|CARROT|CELERY|BROCCOLI|CAULI|CUCUMBER|PEPPER|MUSHROOM|ZUCCHINI|SQUASH|CORN|SALAD|CABBAGE|MELON|PINEAPPLE|KIWI|CILANTRO|PARSLEY|PRODUCE|ORGANIC VEG/],
     ['Carnes e peixes', /CHICKEN|BEEF|PORK|TURKEY|HAM|BACON|SAUSAGE|STEAK|GROUND|SALMON|TUNA|FISH|SHRIMP|COD|HADDOCK|LOBSTER|WINGS|THIGH|BREAST|ROAST|MEAT|DELI|SALAMI|PEPPERONI|WIENER/],
     ['Laticínios e ovos', /MILK|EGG|CHEESE|CHEDDAR|MOZZ|YOGURT|YOGOURT|BUTTER|CREAM|KEFIR|COTTAGE|MARGARINE|NATREL|NEILSON|BLACK DIAMOND|ACTIVIA|OIKOS|ISLAND ABBEY/],
     ['Padaria', /BREAD|BAGEL|BUN|ROLL|TORTILLA|WRAP|PITA|MUFFIN|CROISSANT|CAKE|DEMPSTER|VILLAGGIO|BAKERY|NAAN|ENGLISH MUFFIN/],
@@ -35,7 +33,7 @@ var Leitor = (function () {
   function limpar(d) {
     var t = ' ' + d.toUpperCase() + ' ';
     t = t.replace(/\$/g, ' ').replace(/[*#]+/g, ' ');
-    t = t.replace(/^\s*\(\d{1,2}\)\s*/, ' ').replace(/^\s*\d{4,}\s+/, ' ');                     // código/UPC no começo
+    t = t.replace(/^\s*\d{4,}\s+/, ' ');                     // código/UPC no começo
     t = t.replace(/\s\d{6,}[A-Z]{0,2}(?=\s)/g, ' ');            // UPC no meio (Walmart: 000000004011F)
     t = t.replace(/\s+/g, ' ').trim();
     // marcas de imposto no fim: MRJ, HMRJ, N, J, F, H, T, Y, GC, D, X
@@ -59,7 +57,6 @@ var Leitor = (function () {
     re = /\b(20\d{2})[-\/.](\d{1,2})[-\/.](\d{1,2})\b/g; while ((m = re.exec(texto))) ok(+m[1], +m[2], +m[3]);
     re = /\b(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})\b/g;
     while ((m = re.exec(texto))) { var a = +m[1], b = +m[2], c = +m[3]; ok(c, a, b); ok(c, b, a); if (m[3].length === 2) ok(a, b, c); }
-    if (cands.length) { cands.sort(function (x, y) { return y - x; }); var d0 = cands[0]; return d0.getFullYear() + '-' + String(d0.getMonth() + 1).padStart(2, '0') + '-' + String(d0.getDate()).padStart(2, '0'); }
     var MES = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
     re = /\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\.?\s+(\d{1,2}),?\s+(20\d{2})\b/gi; while ((m = re.exec(texto))) ok(+m[3], MES[m[1].toUpperCase()], +m[2]);
     re = /\b(\d{1,2})\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\.?\s+(20\d{2})\b/gi; while ((m = re.exec(texto))) ok(+m[3], MES[m[2].toUpperCase()], +m[1]);
@@ -71,6 +68,8 @@ var Leitor = (function () {
   function linhaQtd(l) {
     var m = l.match(/(\d+(?:[.,]\d+)?)\s*(KG|LB)\s*@\s*\$?\s?(\d+[.,]\d{2})\s*\/?\s*(KG|LB)?/i);
     if (m) return { qtd: num(m[1]), un: num(m[3]), peso: true, u: m[2].toLowerCase() };
+    m = l.match(/^\s*(\d+(?:[.,]\d+)?)\s*(K[G9]|LB|L8)\s*[@E]?\s*\$?\s?(\d+[.,]\d{2})\s*\/\s*(K[G9]|LB|L8)\b/i);
+    if (m) { var pq = m[1]; if (/^0\d{2,}$/.test(pq)) pq = '0.' + pq.slice(1); return { qtd: num(pq), un: num(m[3]), peso: true, u: /^K/i.test(m[2]) ? 'kg' : 'lb' }; }
     m = l.match(/^\s*(\d{1,3})\s*(?:@|AT|X)\s*\$?\s?(\d+[.,]\d{2})/i);
     if (m) return { qtd: +m[1], un: num(m[2]) };
     m = l.match(/^\s*(\d{1,3})\s*(?:@|AT)\s*(\d+)\s*(?:\/|FOR)\s*\$?\s?(\d+[.,]\d{2})/i);
@@ -78,12 +77,18 @@ var Leitor = (function () {
     return null;
   }
   function ler(texto, hoje) {
-    var bruto = String(texto || '').replace(/\r/g, '').replace(/(\d)[.,]\s(\d{2})(?!\d)/g, '$1.$2');
+    var bruto = String(texto || '').replace(/\r/g, '');
     var U = bruto.toUpperCase();
     var loja = 'outro';
     for (var i = 0; i < LOJAS.length; i++) if (LOJAS[i][1].test(U)) { loja = LOJAS[i][0]; break; }
-    var linhas = bruto.split('\n').map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
-    var itens = [], total = null, imposto = 0, emparelhou = false;
+    var linhas = bruto.split('\n').map(function (l) {
+      l = l.replace(/\s+/g, ' ').trim();
+      // OCR do Atalhos: lixo depois do preço ("$2.84 0）", "$9.97日") e "D" lido como "0"
+      l = l.replace(/[^\x20-\x7E]+$/, '').trim();
+      l = l.replace(/(\d[.,]\d{2})\s+[0O]\)?$/, '$1 D');
+      return l;
+    }).filter(Boolean);
+    var itens = [], total = null, imposto = 0;
     function addItem(raw, tot, q) {
       var lim = limpar(raw); if (!/[A-Z]{2,}/.test(lim)) return null;
       var it = { raw: lim, qtd: 1, un: tot, total: tot };
@@ -98,47 +103,19 @@ var Leitor = (function () {
       if (valor == null && /\bTOTAL\b/.test(L) && !/SUB\s*-?\s*TOTAL|SAVING|ITEMS|POINTS/.test(L)) return { t: 'pular', rot: 'total' };
       if (valor == null && /\b(HST|GST|PST|TAX|TVH)\b/.test(L)) return { t: 'pular', rot: 'imposto' };
       if (PULAR.test(L) || LOJAS.some(function (x) { return x[1].test(L); })) return { t: 'pular', rot: valor == null ? 'ignorar' : null };
+      if (/^\d{8,14}[A-Z]?$/.test(L)) return { t: 'codigo' };
       var q = linhaQtd(L);
-      if (q) { var resto = L.replace(/(\d+(?:[.,]\d+)?)\s*(KG|LB)?\s*(@|AT|X)\s*\$?\s?\d+[.,]\d{2}\s*\/?\s*(KG|LB)?/i, ''); var tp = resto.match(PRECO); return { t: 'qtd', q: q, v: tp ? num(tp[1]) : null }; }
+      if (q) { var resto = L.replace(/(\d+(?:[.,]\d+)?)\s*(KG|LB)?\s*(@|AT|X)\s*\$?\s?\d+[.,]\d{2}\s*\/?\s*(KG|LB)?/i, '').replace(/^\s*\d+(?:[.,]\d+)?\s*(K[G9]|LB|L8)\s*[@E]?\s*\$?\s?\d+[.,]\d{2}\s*\/\s*(K[G9]|LB|L8)\b/i, ''); var tp = resto.match(PRECO); return { t: 'qtd', q: q, v: tp ? num(tp[1]) : null }; }
       if (valor != null && (valor < 0 || DESCONTO.test(L))) return { t: 'desc', v: Math.abs(valor) };
       if (valor != null) { var d = L.replace(PRECO, '').trim(); return /[A-Z]{2,}/.test(limpar(d)) ? { t: 'item', d: d, v: valor } : { t: 'preco', v: valor }; }
       if (/[A-Z]{3,}/.test(L) && L.length <= 60 && !/^\d{1,5}\s+[A-Z].*\b(ST|AVE|RD|DR|BLVD|WAY|STREET|ROAD)\b/.test(L)) return { t: 'nome', d: L };
       return { t: 'pular' };
     });
-    // 1b) Recibos com código em cada produto (Superstore, No Frills): o que não tem código é ruído
-    //     (ex.: o texto impresso no verso do papel, que o iPhone lê por transparência)
-    var COD = /^\(?\d{0,2}\)?\s*\d{4,}\s+[A-Z]/;
-    var comCodigo = linhas.filter(function (l) { return COD.test(l.toUpperCase()); }).length;
-    if (comCodigo >= 3) C.forEach(function (c, i) { if ((c.t === 'nome' || c.t === 'item') && !COD.test(linhas[i].toUpperCase())) c.t = c.t === 'item' && /^[A-Z0-9 .'&%\/-]{3,}$/.test(c.d) && C.slice(Math.max(0, i - 1), i).some(function (x) { return x.t === 'qtd'; }) ? 'item' : 'pular'; });
-    // 1c) Recibo com código copiado em colunas: todos os nomes com código e, mais abaixo, um bloco de preços.
-    //     Casa o 1º nome com o 1º preço…; os preços que sobram vão para SUBTOTAL / HST / TOTAL, na ordem dos rótulos.
-    var colunaCod = false;
-    if (comCodigo >= 3) {
-      var semPreco = [];
-      linhas.forEach(function (l, i) { if (COD.test(l.toUpperCase()) && !PRECO.test(l.toUpperCase()) && (C[i].t === 'nome' || C[i].t === 'pular')) semPreco.push(i); });
-      if (semPreco.length >= 2) {
-        for (var a = 0; a < C.length; a++) {
-          if (C[a].t !== 'preco') continue;
-          var z = a; while (z < C.length && C[z].t === 'preco') z++;
-          if (z - a >= semPreco.length) {
-            semPreco.forEach(function (li, k) { C[li] = { t: 'item', d: linhas[li].toUpperCase(), v: C[a + k].v }; C[a + k].t = 'usado'; });
-            var rotulos = [];
-            for (var r = 0; r < a; r++) { var U2 = linhas[r].toUpperCase(); if (/SUB\s*-?\s*TOTAL/.test(U2)) rotulos.push('sub'); else if (C[r].rot === 'imposto') rotulos.push('imposto'); else if (C[r].rot === 'total') rotulos.push('total'); }
-            for (var q = a + semPreco.length, rr = 0; q < z && rr < rotulos.length; q++, rr++) {
-              if (rotulos[rr] === 'total') total = C[q].v; else if (rotulos[rr] === 'imposto') imposto += C[q].v;
-              C[q].t = 'usado';
-            }
-            colunaCod = true; emparelhou = true;
-            break;
-          }
-          a = z;
-        }
-      }
-    }
     // 2) Texto ao Vivo às vezes copia a coluna de nomes e depois a de preços: junta os blocos em ordem
+    var emparelhou = false;
     for (var k = 0; k < C.length; k++) {
       if (C[k].t !== 'nome') continue;
-      var n1 = k; while (n1 < C.length && (C[n1].t === 'nome' || C[n1].t === 'qtd' && C[n1].v == null)) n1++;
+      var n1 = k; while (n1 < C.length && (C[n1].t === 'nome' || C[n1].t === 'codigo' || C[n1].t === 'qtd' && C[n1].v == null)) n1++;
       var nomes = C.slice(k, n1).filter(function (c) { return c.t === 'nome'; });
       var p1 = n1; while (p1 < C.length && C[p1].t === 'preco') p1++;
       var precos = C.slice(n1, p1);
@@ -155,12 +132,13 @@ var Leitor = (function () {
     // ...ou um bloco de rótulos seguido de um bloco de valores, na mesma ordem
     var pend = null, pendQtd = null, ultimo = null, rots = [];
     C.forEach(function (c) {
-      if (c.t === 'preco' && rots.length) { var r0 = rots.shift(); if (colunaCod) return; if (r0 === 'total') { if (total == null || c.v > total) total = c.v; } else if (r0 === 'imposto') imposto += c.v; return; }
-      if (c.t !== 'pular' && c.t !== 'preco') rots = [];
+      if (c.t === 'preco' && rots.length) { var r0 = rots.shift(); if (r0 === 'total') { if (total == null || c.v > total) total = c.v; } else if (r0 === 'imposto') imposto += c.v; return; }
+      if (c.t !== 'pular' && c.t !== 'preco' && c.t !== 'codigo') rots = [];
       if (c.t === 'total') { if (total == null || c.v > total) total = c.v; ultimo = null; return; }
       if (c.t === 'imposto') { imposto += c.v; ultimo = null; return; }
       if (c.t === 'pular') { if (c.rot) { rots.push(c.rot); pend = null; } ultimo = null; return; }
       if (c.t === 'usado') { ultimo = null; return; }
+      if (c.t === 'codigo') return;
       if (c.t === 'qtd') {
         if (c.v != null && pend) { ultimo = addItem(pend, c.v, c.q); pend = null; return; }
         if (ultimo && (c.q.peso || Math.abs(c.q.qtd * c.q.un - ultimo.total) < 0.06)) { ultimo.qtd = c.q.qtd; ultimo.un = c.q.un; return; }
@@ -171,9 +149,21 @@ var Leitor = (function () {
       if (c.t === 'item') { pend = null; ultimo = addItem(c.d, c.v, pendQtd); pendQtd = null; return; }
       if (c.t === 'nome') { pend = c.d; ultimo = null; }
     });
-    itens = itens.filter(function (it) { return Math.abs(it.total) >= 0.005; });
     itens.forEach(function (it) { it.en = titulo(expandir(it.raw)); it.cat = categoria(expandir(it.raw)); it.total = Math.round(it.total * 100) / 100; it.un = Math.round(it.un * 100) / 100; });
     var soma = Math.round(itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100;
+    // OCR confunde dígitos parecidos (4/9, 1/7, 3/8...). Se trocar 1 dígito de 1 preço fecha o total, corrige.
+    if (total != null && Math.abs(soma + imposto - total) > 0.005) {
+      var PAR = { '0': '86', '1': '7', '2': '7', '3': '8', '4': '9', '5': '6', '6': '58', '7': '12', '8': '036', '9': '4' }, achou = [];
+      itens.forEach(function (it, ix) {
+        if (it.qtd !== 1) return;
+        var t = it.total.toFixed(2);
+        for (var p = 0; p < t.length; p++) { var ds = PAR[t[p]]; if (!ds) continue;
+          for (var q = 0; q < ds.length; q++) { var nv = parseFloat(t.slice(0, p) + ds[q] + t.slice(p + 1));
+            if (Math.abs(soma - it.total + nv + imposto - total) < 0.005) achou.push([ix, nv]); } }
+      });
+      if (achou.length === 1) { var ic = itens[achou[0][0]]; ic.lido = ic.total; ic.total = ic.un = achou[0][1]; ic.corrigido = true;
+        soma = Math.round(itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100; }
+    }
     return { loja: loja, data: data(bruto, hoje), itens: itens, total: total, imposto: Math.round(imposto * 100) / 100, soma: soma, emparelhou: emparelhou };
   }
   function chave(t) {
