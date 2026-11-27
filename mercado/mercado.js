@@ -496,4 +496,43 @@ window.iniciarMercado = function (F) {
     var termo = encodeURIComponent((p.en || c.pt).slice(0, 60));
     abrirFolha('<h3>' + esc(c.pt) + '</h3><p class="nota">' + esc(l.l) + '</p>' +
       '<label class="lb" for="f-preco">Preço (CAD), mesma embalagem</label><input class="in" id="f-preco" type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(atual ? atual.p : '') + '">' +
-      '<label class="lb" for="f-fonte">De onde</label><select class="in" id="f-fonte">' + ['folheto', 'Flipp', 'site', 'prateleira'].map(function (f) { 
+      '<label class="lb" for="f-fonte">De onde</label><select class="in" id="f-fonte">' + ['folheto', 'Flipp', 'site', 'prateleira'].map(function (f) { return '<option' + (atual && atual.fonte === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select>' +
+      (l.busca ? '<p class="nota" style="margin-top:10px"><a href="' + l.busca + termo + '" target="_blank" rel="noopener">Procurar no site da ' + esc(l.n) + '</a></p>' : '') +
+      '<div class="grupo-btn" style="margin-top:12px"><button class="btn pri" id="f-ok" style="flex:1">Salvar</button>' + (atual ? '<button class="btn" id="f-apagar">Apagar</button>' : '') + '<button class="btn" id="f-fechar">Cancelar</button></div>');
+    setTimeout(function () { if ($('f-preco')) $('f-preco').focus(); }, 60);
+    $('f-fechar').onclick = fecharFolha;
+    var salva = function (v) { var m = {}; m['produtos/' + k + '/precos/' + loja] = v; m['produtos/' + k + '/pt'] = c.pt; gravar(m).then(function () { fecharFolha(); toast('Preço salvo'); }); };
+    $('f-ok').onclick = function () { var v = parseFloat($('f-preco').value); if (!(v > 0)) { fecharFolha(); return; } salva({ p: Math.round(v * 100) / 100, data: hojeISO(), fonte: $('f-fonte').value }); };
+    if ($('f-apagar')) $('f-apagar').onclick = function () { salva(null); };
+  }
+  // ── Open Food Facts (gratuito; até 10 buscas por minuto) ──
+  var OFF = 'https://world.openfoodfacts.org';
+  var CAMPOS = 'code,product_name,brands,quantity,nutriscore_grade,nova_group,categories_tags';
+  function pedirOFF(url) { return fetch(url, { headers: { Accept: 'application/json' } }).then(function (r) { if (r.status === 429) throw { code: 'limite' }; if (!r.ok) throw { code: 'http' }; return r.json(); }); }
+  function falhaOFF(k, e) { UI.off[k] = Object.assign(UI.off[k] || {}, { lista: null, msg: e && e.code === 'limite' ? 'O Open Food Facts limita a 10 buscas por minuto. Espere um pouco e tente de novo.' : 'O Open Food Facts não respondeu agora (ele é gratuito e às vezes fica lento). Tente de novo em instantes.' }); desenhar(); }
+  function buscarOFF(k, q) {
+    if (!q) return;
+    UI.off[k] = { q: q, msg: 'Buscando…' }; desenhar();
+    pedirOFF(OFF + '/cgi/search.pl?search_terms=' + encodeURIComponent(q) + '&search_simple=1&action=process&json=1&page_size=6&tagtype_0=countries&tag_contains_0=contains&tag_0=canada&fields=' + CAMPOS)
+      .then(function (d) { UI.off[k] = { q: q, lista: (d.products || []).slice(0, 6) }; desenhar(); }, function (e) { falhaOFF(k, e); });
+  }
+  function escolherOFF(k, j) {
+    var x = UI.off[k] && UI.off[k].lista && UI.off[k].lista[j]; if (!x) return;
+    var tags = x.categories_tags || [], m = {};
+    m['produtos/' + k + '/off'] = { code: String(x.code || ''), nome: String(x.product_name || '').slice(0, 80), marca: String(x.brands || '').slice(0, 60), ns: String(x.nutriscore_grade || '').slice(0, 1), nova: x.nova_group || null, cat: String(tags[tags.length - 1] || '').slice(0, 80) };
+    m['produtos/' + k + '/pt'] = (catalogo()[k] || {}).pt || k;
+    gravar(m).then(function () { UI.off[k] = null; desenhar(); });
+  }
+  function alternativas(k) {
+    var o = (M.produtos[k] || {}).off; if (!o || !o.cat) return;
+    var atual = 'abcde'.indexOf(o.ns || 'e'); if (atual < 0) atual = 4;
+    var notas = 'abcde'.slice(0, Math.max(1, atual)).split('').join('|') || 'a';
+    UI.off[k] = { msg: 'Procurando opções melhores…' }; desenhar();
+    pedirOFF(OFF + '/api/v2/search?categories_tags=' + encodeURIComponent(o.cat) + '&countries_tags_en=canada&nutrition_grades_tags=' + encodeURIComponent(notas) + '&sort_by=popularity_key&page_size=8&fields=' + CAMPOS)
+      .then(function (d) {
+        var alts = (d.products || []).filter(function (x) { return x.product_name && String(x.code) !== o.code; }).slice(0, 4).map(function (x) { return { code: String(x.code || ''), nome: String(x.product_name).slice(0, 80), marca: String(x.brands || '').slice(0, 60), qtd: String(x.quantity || '').slice(0, 30), ns: String(x.nutriscore_grade || '').slice(0, 1), nova: x.nova_group || null }; });
+        if (!alts.length) { UI.off[k] = { msg: atual === 0 ? 'Este já é Nutri-Score A. Boa escolha!' : 'Não achei opções melhores nesta categoria vendidas no Canadá.' }; desenhar(); return; }
+        var m = {}; m['produtos/' + k + '/alts'] = alts; gravar(m).then(function () { UI.off[k] = null; desenhar(); });
+      }, function (e) { falhaOFF(k, e); });
+  }
+};
