@@ -149,7 +149,7 @@ window.iniciarMercado = function (F) {
     d.onclick = function () { nav.scrollBy({ left: 160, behavior: 'smooth' }); };
     nav.addEventListener('scroll', ver, { passive: true }); window.addEventListener('resize', ver); if (window.ResizeObserver) new ResizeObserver(ver).observe(nav); setTimeout(ver, 50); ver();
   })();
-  qsa('#abas button').forEach(function (b) { b.onclick = function () { UI.aba = b.dataset.aba; qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x === b); }); desenhar(); window.scrollTo(0, 0); }; });
+  qsa('#abas button').forEach(function (b) { b.onclick = function () { UI.aba = b.dataset.aba; try { b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {} qsa('#abas button').forEach(function (x) { x.classList.toggle('on', x === b); }); desenhar(); window.scrollTo(0, 0); }; });
 
   // ── dados derivados ──
   function recibos() { return Object.keys(M.recibos).map(function (id) { var r = M.recibos[id]; return Object.assign({ id: id }, r, { itens: [].concat(r.itens || []).filter(Boolean) }); }); }
@@ -302,9 +302,9 @@ window.iniciarMercado = function (F) {
       '<ol class="passos"><li>Toque em <b>Copiar pedido para a IA</b>.</li><li>Abra um app de IA que leia foto (ChatGPT, Gemini, Copilot ou Claude), <b>cole o pedido</b> e mande a <b>foto do recibo</b>.</li><li>Copie a resposta, volte aqui e toque em <b>2. Colar o recibo</b>.</li></ol>' +
       '<button class="btn cheio" id="copiar-pedido">Copiar pedido para a IA</button></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
-    h += '<div class="card"><h2>Recibos salvos</h2>' + (rs.length ? rs.slice(0, 40).map(function (r) {
+    h += '<div class="card"><details' + (UI.abrirRecibos ? ' open' : '') + ' id="det-recibos"><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0">Recibos salvos · ' + rs.length + '</h2><span class="nota" style="margin:0">ver ▾</span></summary><div style="margin-top:10px">' + (rs.length ? rs.slice(0, 40).map(function (r) {
       return '<div class="linha"><div class="info"><div class="t">' + esc(LN[r.loja] || 'Outro') + ' · ' + esc(r.data) + '</div><div class="s">' + r.itens.length + ' itens</div></div><div class="valor">' + din(r.total) + '</div><button class="btn sm" data-ver="' + esc(r.id) + '">Ver</button></div>';
-    }).join('') : '<div class="vazio">Nenhum recibo ainda.</div>') + '</div>';
+    }).join('') : '<div class="vazio">Nenhum recibo ainda.</div>') + '</div></details></div>';
     var nd = Object.keys(M.dic).length;
     if (nd) h += '<div class="card"><h2>Nomes aprendidos · ' + nd + '</h2><p class="nota">Cada código do recibo que você renomeia fica guardado. Na próxima vez ele já vem com o seu nome e a categoria certa.</p><button class="btn sm" id="ver-dic">Ver e corrigir</button></div>';
     return h;
@@ -313,11 +313,20 @@ window.iniciarMercado = function (F) {
     var d = M.dic[chave(it.raw)];
     return { raw: it.raw, pt: d ? d.pt : it.en, cat: d ? d.cat : it.cat, qtd: it.qtd, un: it.un, total: it.total, novo: !d };
   }
+  // Recibo repetido: mesmo mercado, mesma data e mesmo total de um recibo já salvo
+  function duplicado(r, total) {
+    if (total == null || isNaN(total)) return null;
+    return recibos().filter(function (x) { return x.id !== r.id && x.loja === r.loja && x.data === r.data && Math.abs((+x.total || 0) - total) < 0.005; })[0] || null;
+  }
+  function totalRev(r) { var soma = r.itens.reduce(function (s, i) { return s + (+i.total || 0); }, 0); return r.total == null || r.total === '' ? Math.round((soma + (+r.imposto || 0)) * 100) / 100 : +r.total; }
+  function avisoDup(d) { return 'Este recibo já foi salvo: <b>' + esc(LN[d.loja] || 'Outro') + ' · ' + esc(d.data) + ' · ' + din(d.total) + '</b>. Não precisa salvar de novo.'; }
   function telaRevisar() {
     var r = UI.rev, soma = r.itens.reduce(function (s, i) { return s + (+i.total || 0); }, 0);
     var dif = r.total ? Math.abs(soma + (+r.imposto || 0) - r.total) : 0;
     var nomes = {}; Object.keys(M.dic).forEach(function (k) { nomes[M.dic[k].pt] = 1; }); Object.values(catalogo()).forEach(function (c) { nomes[c.pt] = 1; });
     var h = '<datalist id="nomes">' + Object.keys(nomes).sort().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>';
+    var dup = r.id ? null : duplicado(r, totalRev(r));
+    if (dup) h += '<div class="card" style="background:#fef2f2;border:1px solid #fecaca"><p class="nota" style="margin:0;color:#991b1b">⚠️ ' + avisoDup(dup) + ' Toque em <b>Cancelar</b> lá embaixo.</p></div>';
     h += '<div class="card"><h2>' + (r.id ? 'Editar recibo' : 'Conferir recibo') + '</h2>' +
       (r.emparelhou ? '<p class="nota">O texto veio com os nomes e os preços em colunas separadas. Juntei na ordem; confira se cada preço ficou no item certo.</p>' : '') +
       '<div class="grade3" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><div><label class="lb" for="rv-loja">Mercado</label><select class="in" id="rv-loja">' + LOJAS.map(function (l) { return '<option value="' + l.id + '"' + (l.id === r.loja ? ' selected' : '') + '>' + esc(l.n) + '</option>'; }).join('') + '</select></div>' +
@@ -369,7 +378,7 @@ window.iniciarMercado = function (F) {
     if (!L.length) return h + '<div class="vazio">Os alimentos da sua lista aparecem aqui.</div>';
     L.forEach(function (i) {
       var p = M.produtos[i.k] || {}, o = p.off, alts = [].concat(p.alts || []).filter(Boolean), res = UI.off[i.k];
-      h += '<div class="card"><div class="linha" style="padding:0"><div class="info"><div class="t">' + esc(i.pt) + '</div><div class="s">' + (o ? esc(o.nome) + (o.marca ? ' · ' + esc(o.marca) : '') + ' ' + nsBadge(o.ns) + (o.nova ? ' <span class="selo">NOVA ' + esc(o.nova) + '</span>' : '') : 'Ainda não buscado') + '</div></div>' +
+      h += '<div class="card"><div class="linha" style="padding:0"><div class="info"><div class="t" style="display:flex;align-items:center;gap:8px">' + esc(i.pt) + '<button class="btn sm" data-copiar="' + esc(i.k) + '" aria-label="Copiar nome para buscar no Yuka" title="Copiar nome" style="min-height:32px;padding:4px 10px">📋 Copiar</button></div><div class="s">' + (o ? esc(o.nome) + (o.marca ? ' · ' + esc(o.marca) : '') + ' ' + nsBadge(o.ns) + (o.nova ? ' <span class="selo">NOVA ' + esc(o.nova) + '</span>' : '') : 'Ainda não buscado') + '</div></div>' +
         (p.yuka != null ? '<span class="ns ' + yukaCor(+p.yuka) + '">' + esc(p.yuka) + '</span>' : '') + '</div>';
       if (res && res.lista) {
         h += '<p class="nota" style="margin-top:10px">Qual destes é o seu?</p>' + (res.lista.length ? res.lista.map(function (x, j) { return '<div class="linha"><div class="info"><div class="t" style="font-size:14px">' + esc(x.product_name || '?') + '</div><div class="s">' + esc(x.brands || '') + ' ' + esc(x.quantity || '') + ' ' + nsBadge(x.nutriscore_grade) + '</div></div><button class="btn sm" data-escolher="' + esc(i.k) + '" data-j="' + j + '">É este</button></div>'; }).join('') : '<div class="vazio">Nada encontrado. Tente outro nome.</div>');
@@ -450,6 +459,16 @@ window.iniciarMercado = function (F) {
     if ($('manual')) $('manual').onclick = function () { UI.rev = { loja: 'superstore', data: hojeISO(), total: null, imposto: 0, itens: [{ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }] }; desenhar(); };
     qsa('[data-ver]').forEach(function (b) { b.onclick = function () { var r = recibos().filter(function (x) { return x.id === b.dataset.ver; })[0]; if (!r) return; UI.rev = JSON.parse(JSON.stringify(r)); desenhar(); window.scrollTo(0, 0); }; });
     if ($('ver-dic')) $('ver-dic').onclick = abrirDic;
+    // Saudável: copiar o nome do produto para colar no Yuka (nome do Open Food Facts, se já buscado; senão o da busca)
+    qsa('[data-copiar]').forEach(function (b) { b.onclick = function () {
+      var k = b.dataset.copiar, p = M.produtos[k] || {}, o = p.off, inp = qsa('[data-busca="' + k + '"]')[0];
+      var nome = o && o.nome ? ((o.marca ? o.marca + ' ' : '') + o.nome) : (inp ? inp.value : (p.en || p.pt || ''));
+      nome = String(nome || '').trim(); if (!nome) return;
+      var ok = function () { b.textContent = '✓ Copiado'; toast('Copiado: ' + nome + ' — cole no Yuka'); setTimeout(function () { b.textContent = '📋 Copiar'; }, 2500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(nome).then(ok, function () { if (inp) { inp.focus(); inp.select(); } toast('Toque e segure no nome abaixo e escolha Copiar.'); });
+      else if (inp) { inp.focus(); inp.select(); toast('Toque e segure no nome abaixo e escolha Copiar.'); }
+    }; });
+    if ($('det-recibos')) $('det-recibos').ontoggle = function () { UI.abrirRecibos = this.open; };
     if (UI.rev && $('rv-salvar')) ligarRevisao();
     // preços
     qsa('[data-loja]').forEach(function (b) { b.onclick = function () { editarPreco(b.dataset.k, b.dataset.loja); }; });
@@ -491,6 +510,8 @@ window.iniciarMercado = function (F) {
       var itens = r.itens.filter(function (i) { return (i.pt || '').trim() && +i.total; });
       if (!itens.length) { $('rv-erro').textContent = 'Nenhum item com nome e valor.'; return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(r.data || '')) { $('rv-erro').textContent = 'Confira a data.'; return; }
+      var dp = duplicado(r, totalRev(r));
+      if (dp && this.dataset.ok !== '1') { this.dataset.ok = '1'; this.textContent = 'Salvar mesmo assim'; $('rv-erro').innerHTML = avisoDup(dp) + ' Se for outra compra igual, toque em <b>Salvar mesmo assim</b>.'; return; }
       var id = r.id || (r.data + '-' + r.loja + '-' + Math.random().toString(36).slice(2, 7)), m = {};
       var soma = itens.reduce(function (s, i) { return s + i.total; }, 0);
       m['recibos/' + id] = { loja: r.loja, data: r.data, total: r.total == null ? Math.round((soma + (+r.imposto || 0)) * 100) / 100 : +r.total, imposto: +r.imposto || 0, criado: r.criado || Date.now(),
