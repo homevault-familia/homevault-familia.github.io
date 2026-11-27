@@ -249,9 +249,9 @@ window.iniciarMercado = function (F) {
     var h = '<div class="card"><h2>Novo recibo</h2>' +
       '<button class="btn pri cheio" id="escanear" style="min-height:56px;font-size:17px">📷 Escanear recibo com a câmera</button>' +
       '<div id="dica-scan" class="nota" style="display:none;background:#eff6ff;border-radius:12px;padding:12px;margin:10px 0 0">' +
-      '<b>Agora, na caixa branca abaixo:</b><ol class="passos" style="margin-top:6px"><li><b>Toque e segure</b> dentro da caixa até aparecer o menu.</li><li>Toque em <b>Scan Text</b> (ícone de texto com moldura, às vezes atrás da setinha <b>›</b>).</li><li>Aponte a câmera para o recibo inteiro, espere o texto aparecer e toque em <b>Insert</b>.</li></ol>O app lê o recibo sozinho em seguida.</div>' +
+      '<b>Agora, na caixa branca abaixo:</b><ol class="passos" style="margin-top:6px"><li><b>Toque e segure</b> dentro da caixa até aparecer o menu.</li><li>Toque em <b>Scan Text</b> (ícone de texto com moldura, às vezes atrás da setinha <b>›</b>).</li><li>Aponte a câmera para o recibo, espere o texto aparecer e toque em <b>Insert</b>.</li></ol><b>Recibo comprido?</b> Escaneie em partes: primeiro a de cima (os itens), toque em <b>Insert</b>, depois toque e segure no fim do texto e escaneie a parte de baixo (até o TOTAL). Quando o TOTAL chegar, o app lê sozinho.</div>' +
       '<label class="lb" for="texto">Texto do recibo</label><textarea class="in" id="texto" placeholder="Toque e segure aqui → Scan Text">' + esc(UI.texto) + '</textarea>' +
-      '<div class="grupo-btn" style="margin-top:10px"><button class="btn" id="ler">Ler texto</button><button class="btn" id="colar">Colar</button><button class="btn" id="manual">Recibo em branco</button></div><div class="erro" id="r-erro"></div>' +
+      '<div class="grupo-btn" style="margin-top:10px"><button class="btn" id="ler">Ler texto</button><button class="btn" id="colar">Colar</button><button class="btn" id="limpar">Limpar</button><button class="btn" id="manual">Recibo em branco</button></div><div class="erro" id="r-erro"></div>' +
       '<details style="margin-top:10px"><summary class="nota" style="cursor:pointer">Já tirou a foto antes?</summary><ol class="passos"><li>No app <b>Fotos</b>, abra a foto, toque e segure no texto → <b>Select All</b> → <b>Copy</b>.</li><li>Volte aqui e toque em <b>Colar</b>.</li></ol></details></div>';
     var rs = recibos().sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.criado || 0) - (a.criado || 0); });
     h += '<div class="card"><h2>Recibos salvos</h2>' + (rs.length ? rs.slice(0, 40).map(function (r) {
@@ -385,7 +385,7 @@ window.iniciarMercado = function (F) {
       UI.texto = this.value;
       // texto do Scan Text (ou colado) chegou: lê sozinho quando parar de mudar
       clearTimeout(UI.auto);
-      if (this.value.length - (UI.inicio || 0) > 40 && /\d[.,]\d{2}/.test(this.value)) UI.auto = setTimeout(lerTexto, 900);
+      if (this.value.length - (UI.inicio || 0) > 40 && /\d[.,]\d{2}/.test(this.value) && /\bTOTAL\b/i.test(this.value) && /\d[.,]\d{2}[\s\S]*\d[.,]\d{2}[\s\S]*\d[.,]\d{2}/.test(this.value)) UI.auto = setTimeout(lerTexto, 1200);
     };
     if ($('texto')) $('texto').onfocus = function () { UI.inicio = this.value.length; };
     if ($('escanear')) $('escanear').onclick = function () { $('dica-scan').style.display = ''; $('texto').focus(); $('texto').scrollIntoView({ block: 'center', behavior: 'smooth' }); };
@@ -395,6 +395,7 @@ window.iniciarMercado = function (F) {
         function () { $('texto').focus(); $('r-erro').textContent = 'Toque e segure na caixa abaixo e escolha Colar.'; });
     };
     if ($('ler')) $('ler').onclick = function () { UI.texto = $('texto').value; lerTexto(); };
+    if ($('limpar')) $('limpar').onclick = function () { UI.texto = ''; $('texto').value = ''; UI.inicio = 0; $('r-erro').textContent = ''; $('texto').focus(); };
     if ($('manual')) $('manual').onclick = function () { UI.rev = { loja: 'superstore', data: hojeISO(), total: null, imposto: 0, itens: [{ raw: '', pt: '', cat: 'Mercearia', qtd: 1, un: 0, total: 0 }] }; desenhar(); };
     qsa('[data-ver]').forEach(function (b) { b.onclick = function () { var r = recibos().filter(function (x) { return x.id === b.dataset.ver; })[0]; if (!r) return; UI.rev = JSON.parse(JSON.stringify(r)); desenhar(); window.scrollTo(0, 0); }; });
     if ($('ver-dic')) $('ver-dic').onclick = abrirDic;
