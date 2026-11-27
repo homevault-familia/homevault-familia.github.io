@@ -10,7 +10,7 @@ var Leitor = (function () {
     ['gianttiger', /GIANT\s*TIGER/],
     ['outro', /FOODLAND|CO-?OP|SAVE\s*EASY|SHOPPERS/]
   ];
-  var PULAR = /(SUB\s*-?\s*TOTAL|\bTOTAL\b|\bHST\b|\bGST\b|\bPST\b|\bTAX|\bTVH|CHANGE|\bCASH\b|VISA|MASTER\s*CARD|\bDEBIT|INTERAC|AMEX|CREDIT|BALANCE|POINTS|OPTIMUM|SCENE\+?|AUTH|APPROV|ACCOUNT|\bCARD\b|TERMINAL|\bREF\b|INVOICE|TRANS(ACTION)?\b|CASHIER|\bTEL\b|PHONE|THANK|MERCI|ITEMS?\s*SOLD|NUMBER OF ITEMS|TENDER|AMOUNT|YOU SAVED|TOTAL SAVINGS|SAVINGS|REWARDS|MEMBER|RECEIPT|SURVEY|WWW\.|\.COM|\.CA\b|STORE\s*#|ST#|OP#|TE#|TR#|CUSTOMER COPY|SIGNATURE|AID:|TVR|RETAIN|HAVE A|GREAT DAY|NICE DAY|COME AGAIN|SEE YOU|PAYER|DROP-?IN|CUSTOMER|PRODUCT SALE|SOLD BY|SERVED BY|CLERK|REGISTER|LANE\b)/;
+  var PULAR = /(SUB\s*-?\s*TOTAL|\bTOTAL\b|\bHST\b|\bGST\b|\bPST\b|\bTAX|\bTVH|CHANGE|\bCASH\b|VISA|MASTER\s*CARD|\bDEBIT|INTERAC|AMEX|CREDIT|BALANCE|POINTS|OPTIMUM|SCENE\+?|AUTH|APPROV|ACCOUNT|\bCARD\b|TERMINAL|\bREF\b|INVOICE|TRANS(ACTION)?\b|CASHIER|\bTEL\b|PHONE|THANK|MERCI|ITEMS?\s*SOLD|NUMBER OF ITEMS|TENDER|AMOUNT|YOU SAVED|TOTAL SAVINGS|SAVINGS|REWARDS|MEMBER|RECEIPT|SURVEY|WWW\.|\.COM|\.CA\b|STORE\s*#|ST#|OP#|TE#|TR#|CUSTOMER COPY|SIGNATURE|AID:|TVR|RETAIN|HAVE A|GREAT DAY|NICE DAY|COME AGAIN|SEE YOU|PAYER|DROP-?IN|CUSTOMER|PRODUCT SALE|SOLD BY|SERVED BY|CLERK|REGISTER|LANE\b|\bTEND\b|[MVD]CARD|\bRRN\b|\bAID\b|^TC\b|CHANGE DUE)/;
   var DESCONTO = /(SAVE|DISCOUNT|COUPON|REDUCTION|RABAIS|INSTANT|PROMO|MULTI\s*BUY|\bOFF\b|PRICE\s*MATCH|ROLLBACK\s*SAV|CPN|TPD|\bREDUC)/;
   var EXPANDE = { BLK: 'BLACK', WHT: 'WHITE', CHKN: 'CHICKEN', CKN: 'CHICKEN', BRST: 'BREAST', BNLS: 'BONELESS', SKNLS: 'SKINLESS', BRD: 'BREAD', ORG: 'ORGANIC', GRN: 'GREEN', RD: 'RED', YLW: 'YELLOW', VEG: 'VEGETABLE', VEGS: 'VEGETABLES', FRZ: 'FROZEN', FZN: 'FROZEN', BF: 'BEEF', GRND: 'GROUND', LN: 'LEAN', XLN: 'EXTRA LEAN', CHS: 'CHEESE', CHSE: 'CHEESE', CHED: 'CHEDDAR', MOZZ: 'MOZZARELLA', YOG: 'YOGURT', YGRT: 'YOGURT', BTR: 'BUTTER', MLK: 'MILK', CRM: 'CREAM', SR: 'SOUR', PNT: 'PEANUT', BTTR: 'BUTTER', JCE: 'JUICE', ORNG: 'ORANGE', APPL: 'APPLE', BAN: 'BANANA', BANAN: 'BANANAS', POT: 'POTATO', POTS: 'POTATOES', TOM: 'TOMATO', TOMS: 'TOMATOES', ONIO: 'ONION', LETT: 'LETTUCE', CUC: 'CUCUMBER', STRAWB: 'STRAWBERRIES', BLUEB: 'BLUEBERRIES', WW: 'WHOLE WHEAT', WHL: 'WHOLE', WHT_: 'WHEAT', MUSH: 'MUSHROOMS', PEPP: 'PEPPERS', SAUS: 'SAUSAGE', PK: 'PORK', TKY: 'TURKEY', SLMN: 'SALMON', CRL: 'CEREAL', OATML: 'OATMEAL', PSTA: 'PASTA', SPAG: 'SPAGHETTI', SCE: 'SAUCE', TP: 'TOILET PAPER', PT: 'PAPER TOWEL', DET: 'DETERGENT', LIQ: 'LIQUID', DISH: 'DISH', SHMP: 'SHAMPOO', TOOTHP: 'TOOTHPASTE', BTL: 'BOTTLE', PKG: 'PACK', LRG: 'LARGE', LG: 'LARGE', MED: 'MEDIUM', SM: 'SMALL', XL: 'EXTRA LARGE', GV: 'GREAT VALUE', NN: 'NO NAME', CMPL: 'COMPLIMENTS', KS: 'KIRKLAND', FLK: 'FLAKES', FLKS: 'FLAKES', ORIG: 'ORIGINAL', ENG: 'ENGLISH', BNS: 'BEANS', GRK: 'GREEK', CRNCH: 'CRUNCH', HNY: 'HONEY', SWT: 'SWEET', PEAN: 'PEANUT', ALMD: 'ALMOND', CHOC: 'CHOCOLATE', STRWB: 'STRAWBERRY', RSP: 'RASPBERRY', CRN: 'CORN', OLV: 'OLIVE', VEGG: 'VEGGIE', TORT: 'TORTILLA', SNDWCH: 'SANDWICH' };
   var CATS = [
@@ -101,6 +101,9 @@ var Leitor = (function () {
     // 1) classifica cada linha
     var C = linhas.map(function (l) {
       var L = l.toUpperCase(), pm = L.match(PRECO), valor = pm ? num(pm[1]) * (pm[2] ? -1 : 1) : null;
+      var r = classif(L, pm, valor); if (/SUB\s*-?\s*TOTAL|\bTOTAL\b/.test(L) && !/SAVING|ITEMS|POINTS/.test(L)) r.fim = true; return r;
+    });
+    function classif(L, pm, valor) {
       if (/\bTOTAL\b/.test(L) && !/SUB\s*-?\s*TOTAL|SAVING|ITEMS|POINTS/.test(L) && valor != null) return { t: 'total', v: valor };
       if (/\b(HST|GST|PST|TAX|TVH)\b/.test(L) && valor != null && !/TOTAL/.test(L)) return { t: 'imposto', v: valor };
       if (valor == null && /\bTOTAL\b/.test(L) && !/SUB\s*-?\s*TOTAL|SAVING|ITEMS|POINTS/.test(L)) return { t: 'pular', rot: 'total' };
@@ -113,6 +116,14 @@ var Leitor = (function () {
       if (valor != null) { var d = L.replace(PRECO, '').trim(); return /[A-Z]{2,}/.test(limpar(d)) ? { t: 'item', d: d, v: valor } : { t: 'preco', v: valor }; }
       if (/[A-Z]{3,}/.test(L) && L.length <= 60 && !/^\d{1,5}\s+[A-Z].*\b(ST|AVE|RD|DR|BLVD|WAY|STREET|ROAD)\b/.test(L)) return { t: 'nome', d: L };
       return { t: 'pular' };
+    }
+    // candidatos a total: linhas com TOTAL/TEND e o valor nelas ou logo abaixo
+    var cands = [];
+    linhas.forEach(function (l, i) {
+      var L = l.toUpperCase(); if (!/SUB\s*-?\s*TOTAL|\bTOTAL\b|\bTEND\b/.test(L) || /SAVING|ITEMS|POINTS/.test(L)) return;
+      var vs = L.match(/\$\s?\d{1,4}[.,]\d{2}/g) || L.match(/\d{1,4}[.,]\d{2}/g);
+      if (!vs && linhas[i + 1] && /^-?\$?\s?\d{1,4}[.,]\d{2}$/.test(linhas[i + 1])) vs = [linhas[i + 1]];
+      (vs || []).forEach(function (v) { var n = num(v); if (n > 0) cands.push(n); });
     });
     // 2) Texto ao Vivo às vezes copia a coluna de nomes e depois a de preços: junta os blocos em ordem
     var emparelhou = false;
@@ -133,9 +144,11 @@ var Leitor = (function () {
     // 3) percorre em ordem
     // Texto ao Vivo também separa rótulo e valor: "Subtotal" numa linha e "$8.25" na de baixo
     // ...ou um bloco de rótulos seguido de um bloco de valores, na mesma ordem
-    var pend = null, pendQtd = null, ultimo = null, rots = [];
+    var pend = null, pendQtd = null, ultimo = null, rots = [], acabou = false;
     C.forEach(function (c) {
-      if (c.t === 'preco' && rots.length) { var r0 = rots.shift(); if (r0 === 'total') { if (total == null || c.v > total) total = c.v; } else if (r0 === 'imposto') imposto += c.v; return; }
+      if (c.t === 'preco' && rots.length) { var r0 = rots.shift(); if (r0 === 'total') { cands.push(c.v); if (total == null || c.v > total) total = c.v; } else if (r0 === 'imposto') imposto += c.v; return; }
+      if (c.fim && itens.length) acabou = true;
+      if (acabou && c.t !== 'total' && c.t !== 'imposto' && c.t !== 'pular') { pend = null; return; }
       if (c.t !== 'pular' && c.t !== 'preco' && c.t !== 'codigo') rots = [];
       if (c.t === 'total') { if (total == null || c.v > total) total = c.v; ultimo = null; return; }
       if (c.t === 'imposto') { imposto += c.v; ultimo = null; return; }
@@ -155,6 +168,14 @@ var Leitor = (function () {
     });
     itens.forEach(function (it) { it.en = titulo(expandir(it.raw)); it.cat = categoria(expandir(it.raw)); it.total = Math.round(it.total * 100) / 100; it.un = Math.round(it.un * 100) / 100; });
     var soma = Math.round(itens.reduce(function (s, it) { return s + it.total; }, 0) * 100) / 100;
+    // total: o candidato que bate com os itens; senão o que mais se repete
+    if (cands.length) {
+      var alvo = Math.round((soma + imposto) * 100) / 100, bate = cands.filter(function (v) { return Math.abs(v - alvo) < 0.005; });
+      if (bate.length) total = bate[0];
+      else { var cnt = {}; cands.forEach(function (v) { cnt[v] = (cnt[v] || 0) + 1; });
+        var best = null; Object.keys(cnt).forEach(function (k) { var v = +k; if (best == null || cnt[k] > cnt[best] || cnt[k] === cnt[best] && v > best) best = v; });
+        if (best != null && (total == null || cnt[best] > 1)) total = best; }
+    }
     // OCR confunde dígitos parecidos (4/9, 1/7, 3/8...). Se trocar 1 dígito de 1 preço fecha o total, corrige.
     if (total != null && Math.abs(soma + imposto - total) > 0.005) {
       var PAR = { '0': '86', '1': '7', '2': '7', '3': '8', '4': '9', '5': '6', '6': '58', '7': '12', '8': '036', '9': '4' }, achou = [];
