@@ -273,7 +273,7 @@ window.iniciarMercado = function (F) {
   }
   function mostrarCaixa(msg) { $('caixa').style.display = ''; $('texto').focus(); $('r-erro').textContent = msg; }
   // Link do iCloud do atalho "Mercado" (Shortcuts → segurar → Share → Copy iCloud Link). Trocar aqui se o atalho mudar.
-  var ATALHO_URL = 'https://www.icloud.com/shortcuts/932eadef8398443785cf0df7b56a0ae7';
+  var ATALHO_URL = 'https://www.icloud.com/shortcuts/6662d894184449e487534350d39ba320';
   var PEDIDO_IA = 'Read the attached store receipt photo. Reply ONLY with these lines, no other text:\n' +
     'LOJA|store name\nDATA|YYYY-MM-DD\nTOTAL|total paid\nIMPOSTO|total tax, 0 if none\n' +
     'Then one line per product, in receipt order:\n' +
